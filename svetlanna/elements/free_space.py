@@ -141,7 +141,7 @@ class FreeSpace(Element):
                 impulse_response_fft = self.impulse_response_fresnel()
             else:
 
-                impulse_response_fft = self.impulse_response_angular_spectrum
+                impulse_response_fft = self.impulse_response_angular_spectrum()
         else:
             raise ValueError("Unknown forward propagation method")
 
