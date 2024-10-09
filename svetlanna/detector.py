@@ -192,7 +192,8 @@ class DetectorProcessorClf(nn.Module):
         """
         if self.segmented_detector is None:  # there is no predefined segments of a detector for classes
             # TODO: must we make it in __init__? But we need a detector (detector_data) shape for it!
-            self.segmented_detector = self.detector_segmentation(detector_data.shape)
+            detector_shape = detector_data.size()[-2:]  # [H, W]
+            self.segmented_detector = self.detector_segmentation(detector_shape)
             self.segments_weights = self.weight_segments()
 
         integrals_by_classes = torch.zeros(size=(1, self.num_classes))
@@ -206,4 +207,25 @@ class DetectorProcessorClf(nn.Module):
         integrals_by_classes = integrals_by_classes * self.segments_weights
         # TODO: maybe some function like SoftMax? but integrals can be large!
         return integrals_by_classes / integrals_by_classes.sum().item()
+
+    def batch_forward(self, batch_detector_data: torch.Tensor) -> torch.Tensor:
+        """
+        Calculates probabilities of belonging to classes for a batch of detector images.
+        """
+        # TODO: make `.forward()` universal for a batch and for a single wavefront!
+        if self.segmented_detector is None:  # there is no predefined segments of a detector for classes
+            detector_shape = batch_detector_data.size()[-2:]  # [H, W]
+            self.segmented_detector = self.detector_segmentation(detector_shape)
+            self.segments_weights = self.weight_segments()
+
+        batch_size = batch_detector_data.size()[0]
+
+        integrals_by_classes = torch.zeros(size=(batch_size, self.num_classes))
+        for ind_class in range(self.num_classes):
+            mask_class = torch.where(ind_class == self.segmented_detector, 1, 0)
+            integrals_by_classes[:, ind_class] = (
+                    batch_detector_data * mask_class
+            ).sum(dim=(-2, -1))[:, 0] * self.segments_weights[0, ind_class]
+
+        return integrals_by_classes / torch.unsqueeze(integrals_by_classes.sum(dim=1), 1)
 
