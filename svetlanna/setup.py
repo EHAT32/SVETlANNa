@@ -56,12 +56,13 @@ class LinearOpticalSetup:
 
         optical_scheme = ''  # string that represents a linear optical setup (schematic)
 
-        for ind_element, element in enumerate(self.elements):
+        self.net.eval()
+        for ind_element, element in enumerate(self.net):
             # for visualization in a console
             element_name = type(element).__name__
             optical_scheme += f'-({ind_element})-> [{ind_element + 1}. {element_name}] '
             # TODO: Replace len(...) with something for Iterable?
-            if ind_element == len(self.elements) - 1:
+            if ind_element == len(self.net) - 1:
                 optical_scheme += f'-({ind_element + 1})->'
             # element forward
             this_wavefront = element.forward(this_wavefront)
