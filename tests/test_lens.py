@@ -1,8 +1,8 @@
-from svetlanna import elements
-from svetlanna import SimulationParameters
-
 import pytest
 import torch
+
+from svetlanna import elements
+from svetlanna import SimulationParameters
 
 lens_parameters = [
     "ox_size",

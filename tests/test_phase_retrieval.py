@@ -2,7 +2,6 @@ import pytest
 import torch
 import numpy as np
 
-
 from svetlanna import elements
 from svetlanna import SimulationParameters
 from svetlanna import Wavefront

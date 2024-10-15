@@ -3,7 +3,7 @@ from torch import nn
 from torch import Tensor
 from ..simulation_parameters import SimulationParameters
 from ..specs import ReprRepr, ParameterSpecs
-from typing import Iterable, Literal
+from typing import Iterable
 from ..parameters import BoundedParameter, Parameter
 import torch
 

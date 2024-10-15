@@ -1,5 +1,6 @@
 import pytest
 import torch
+
 from svetlanna.elements import Element
 from svetlanna import SimulationParameters
 from svetlanna.detector import Detector, DetectorProcessorClf

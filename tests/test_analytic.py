@@ -1,15 +1,12 @@
-# TODO: rename to test_analytic.py
-# TODO: docstrings
+import pytest
+import torch
+import numpy as np
 
 from svetlanna import elements
 from svetlanna import SimulationParameters
 from svetlanna import Wavefront
 
 from examples import analytical_solutions as anso
-
-import pytest
-import torch
-import numpy as np
 
 square_parameters = [
     "ox_size",
@@ -40,6 +37,30 @@ def test_rectangle_fresnel(
     expected_std: float,
     error_energy: float
 ):
+    """Test for the free propagation problem on the example of diffraction of
+    the plane wave on the square aperture
+
+    Parameters
+    ----------
+    ox_size : float
+        System size along the axis ox
+    oy_size : float
+        System size along the axis oy
+    ox_nodes : int
+        Number of computational nodes along the axis ox
+    oy_nodes : int
+        Number of computational nodes along the axis oy
+    wavelength_test : float
+        Wavelength for the incident field
+    distance_test : float
+        The distance between square aperture and the screen
+    square_size_test : float
+        The size of the square aperture
+    expected_std : float
+        Criterion for accepting the test(standard deviation)
+    error_energy : float
+        Criterion for accepting the test(energy loss)
+    """
 
     params = SimulationParameters(
         x_size=ox_size,

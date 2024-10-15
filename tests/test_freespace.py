@@ -1,9 +1,9 @@
+import pytest
+import torch
+
 from svetlanna import elements
 from svetlanna import SimulationParameters
 from svetlanna import Wavefront
-
-import pytest
-import torch
 
 
 parameters = [

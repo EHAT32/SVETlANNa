@@ -1,7 +1,8 @@
-import torch
 from typing import Literal
 from typing import overload
 from typing import Protocol
+
+import torch
 
 from svetlanna import LinearOpticalSetup
 
