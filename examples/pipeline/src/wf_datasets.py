@@ -1,8 +1,10 @@
+import warnings
+
 import torch
 from torch.utils.data import Dataset
 import torchvision.transforms as transforms
 from torchvision.transforms import InterpolationMode
-import torchvision.transforms.functional as F
+import torchvision.transforms.functional as functional
 
 from svetlanna import SimulationParameters
 from svetlanna import Wavefront
@@ -31,25 +33,27 @@ class DatasetOfWavefronts(Dataset):
         self.transformations = transformations
 
         self.sim_params = sim_params  # to check if all transforms results in right shape
-        self.check_transformations()
+        self.check_transformations()  # print warnings if necessary
 
     def check_transformations(self):
         """
         Checks if transformations transforms an image to a right-shaped Wavefront.
         """
-        random_image = F.to_pil_image(torch.rand(size=(5, 5)))  # random image
+        random_image = functional.to_pil_image(torch.rand(size=(5, 5)))  # random image
         wavefront = self.transformations(random_image)
 
         # check type
         if not isinstance(wavefront, Wavefront):
-            # TODO: Must be a log message?
-            print('WARNING: An output object is not of the Wavefront type!')
+            warnings.warn(
+                message='An output object is not of the Wavefront type!'
+            )
 
         # compare nodes number of the resulted Wavefront (last two dimensions) with simulation parameters
         sim_nodes_shape = torch.Size([self.sim_params.y_nodes, self.sim_params.x_nodes])  # [W, H]
         if not wavefront.size()[-2:] == sim_nodes_shape:
-            # TODO: Must be a log message?
-            print('WARNING: A shape of a resulted Wavefront does not match with SimulationParameters!')
+            warnings.warn(
+                message='A shape of a resulted Wavefront does not match with SimulationParameters!'
+            )
 
     def __len__(self):
         return len(self.init_ds)
