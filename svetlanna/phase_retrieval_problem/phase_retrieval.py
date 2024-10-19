@@ -6,9 +6,19 @@ import torch
 
 from svetlanna import LinearOpticalSetup
 from svetlanna.phase_retrieval_problem import algorithms
+from svetlanna.phase_retrieval_problem import phase_retrieval_result as prr
 
 
 class SetupLike(Protocol):
+    """A class for phase_retrieval_problem with personal realizations of
+    forward and reverse methods instead of methods in
+    svetlanna.setup.LinearOpticalSetup
+
+    Parameters
+    ----------
+    Protocol : _type_
+        _description_
+    """
     def forward(self, input_field: torch.Tensor) -> torch.Tensor:
         ...
 
@@ -22,9 +32,7 @@ def retrieve_phase(
     optical_setup: LinearOpticalSetup | SetupLike,
     target_intensity: torch.Tensor,
     initial_phase: torch.Tensor = None,
-    method: Literal['GS', 'HIO'] = 'GS',
-    maxiter: int = 500,
-    tol: float = 1e-3
+    method: Literal['GS', 'HIO'] = 'GS'
 ):
     ...
 
@@ -37,14 +45,11 @@ def retrieve_phase(
     target_phase: torch.Tensor,
     target_region: torch.Tensor,
     initial_phase: torch.Tensor = None,
-    method: Literal['GS', 'HIO'] = 'GS',
-    maxiter: int = 500,
-    tol: float = 1e-3
+    method: Literal['GS', 'HIO'] = 'GS'
 ):
     ...
 
 
-# TODO: fix docstrings
 def retrieve_phase(
     source_intensity: torch.Tensor,
     optical_setup: LinearOpticalSetup | SetupLike,
@@ -52,13 +57,14 @@ def retrieve_phase(
     target_phase: torch.Tensor | None = None,
     target_region: torch.Tensor = None,
     initial_phase: torch.Tensor = None,
-    method: Literal['GS', 'HIO', 'Pendulum'] = 'GS',
-    maxiter: int = 300,
-    tol: float = 1e-3,
-    constant_factor: float = 0.7,
-    constant_amplitude_factor: float = 2.,
-    constant_phase_factor: float = 2.
-) -> torch.Tensor:
+    method: Literal['GS', 'HIO'] = 'GS',
+    options: dict = {
+        'tol': 1e-16,
+        'maxiter': 20,
+        'constant_factor': float == 0.9,
+        'disp': False
+    }
+) -> prr.PhaseRetrievalResult:
     """Function for solving phase retrieval problem: generating target
     intensity profile or reconstructing the phase profile of the field
 
@@ -80,17 +86,19 @@ def retrieve_phase(
         Initial approximation for the phase profile, by default None
     method : Literal[&#39;GS&#39;, &#39;HIO&#39;], optional
         Algorithms for phase retrieval problem, by default 'GS'
-    maxiter : int, optional
-        Maximum number of iterations, by default 100
-    tol : float, optional
-        Tolerance, by default 1e-3
-    constant_factor : float, optional
-        Learning rate parameter for the HIO method, by default 0.5
+    options : dict, optional
+        Dictionary with optimization parameters, by default {
+        'tol': 1e-16,   # criteria for stop optimization
+        'maxiter': 100, # maximum number of iterations
+        'constant_factor': float == 0.9,    # convergence parameter for HIO
+        'disp': False   # show result of optimization
+        }
 
     Returns
     -------
-    torch.Tensor
-        Optimized phase profile from 0 to 2pi
+    prr.PhaseRetrievalResult
+        Exemplar of class PhaseRetrievalResult which presents result of
+        optimization
 
     Raises
     ------
@@ -106,47 +114,40 @@ def retrieve_phase(
 
     if method == 'GS':
 
-        phase_distribution = algorithms.gerchberg_saxton_algorithm(
+        result = algorithms.gerchberg_saxton_algorithm(
             target_intensity=target_intensity,
             source_intensity=source_intensity,
             forward=forward_propagation,
             reverse=reverse_propagation,
             initial_approximation=initial_phase,
-            tol=tol,
-            maxiter=maxiter,
+            tol=options['tol'],
+            maxiter=options['maxiter'],
             target_phase=target_phase,
             target_region=target_region
         )
     elif method == 'HIO':
-        phase_distribution = algorithms.hybrid_input_output(
+        result = algorithms.hybrid_input_output(
             target_intensity=target_intensity,
             source_intensity=source_intensity,
             forward=forward_propagation,
             reverse=reverse_propagation,
             initial_approximation=initial_phase,
-            tol=tol,
-            maxiter=maxiter,
+            tol=options['tol'],
+            maxiter=options['maxiter'],
             target_phase=target_phase,
             target_region=target_region,
-            constant_factor=constant_factor
+            constant_factor=options['constant_factor']
         )
-
-    elif method == 'Pendulum':
-        phase_distribution = algorithms.pendulum(
-            target_intensity=target_intensity,
-            source_intensity=source_intensity,
-            forward=forward_propagation,
-            reverse=reverse_propagation,
-            initial_approximation=initial_phase,
-            tol=tol,
-            maxiter=maxiter,
-            target_phase=target_phase,
-            target_region=target_region,
-            constant_amplitude_factor=constant_amplitude_factor,
-            constant_phase_factor=constant_phase_factor
-        )
-
     else:
         raise ValueError('Unknown optimization method')
 
-    return phase_distribution
+    if options['disp'] is True:
+        if (target_phase is not None) & (target_region is not None):
+            print('Type of problem: phase reconstruction')
+        else:
+            print('Type of problem: generate intensity profile')
+        print('Method:' + str(method))
+        print('Current cost function value:' + str(result.cost_func))
+        print('Number of iteration:' + str(result.number_of_iterations))
+
+    return result

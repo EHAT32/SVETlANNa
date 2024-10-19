@@ -26,7 +26,7 @@ parameters = [
     parameters,
     [
         (10, 10, 1000, 1000, 660 * 1e-6, 0.5, 100., 10., 1e-4),
-        (5, 5, 1000, 1000, 1064 * 1e-6, 0.7, 150., 10., 1e-4),
+        (7, 8, 1000, 1000, 1064 * 1e-6, 0.7, 150., 10., 1e-4),
         (15, 8, 1500, 1000, 550 * 1e-6, 0.5, 120., 10., 1e-4)
     ]
 )
@@ -99,7 +99,7 @@ def test_phase_retrieval(
 
     free_space1 = elements.FreeSpace(
         simulation_parameters=params,
-        distance=torch.tensor(distance_test),
+        distance=torch.tensor(3 * distance_test),
         method='auto'
     )
     output_field = free_space1.forward(input_field=field_after_lens1)
@@ -116,31 +116,31 @@ def test_phase_retrieval(
 
     optical_setup = LinearOpticalSetup([free_space1])
 
-    goal = (x_grid**2 + y_grid ** 2 <= 2).float()
+    goal = (x_grid**2 + y_grid ** 2 <= 5).float()
 
-    phase_reconstruction_hio = phase_retrieval.retrieve_phase(
+    result_hio = phase_retrieval.retrieve_phase(
         source_intensity=torch.tensor(intensity_source),
         optical_setup=optical_setup,
         target_intensity=torch.tensor(intensity_target),
         target_phase=torch.tensor(phase_target),
         target_region=goal,
         initial_phase=None,
-        method='HIO',
-        maxiter=15,
-        tol=1e-7
+        method='HIO'
     )
 
-    phase_get_intensity = phase_retrieval.retrieve_phase(
+    phase_reconstruction_hio = result_hio.solution
+
+    result_gs = phase_retrieval.retrieve_phase(
         source_intensity=torch.tensor(intensity_source),
         optical_setup=optical_setup,
         target_intensity=torch.tensor(intensity_target),
         target_phase=None,
         target_region=None,
         initial_phase=None,
-        method='GS',
-        maxiter=15,
-        tol=1e-7
+        method='GS'
     )
+
+    phase_get_intensity = result_gs.solution
 
     step = 2 * torch.pi / 256
     mask_reconstruction_hio = phase_reconstruction_hio // step
@@ -152,9 +152,7 @@ def test_phase_retrieval(
     ).forward(field_before_lens1)
 
     output_field = optical_setup.forward(field_after_slm)
-    intensity_target_opt = torch.pow(
-        torch.abs(output_field), 2
-    ).detach().numpy()
+    intensity_target_opt = output_field.intensity.detach().numpy()
 
     energy_reconstruction_hio = np.sum(intensity_target_opt) * dx * dy
     energy_true = np.sum(intensity_target) * dx * dy
@@ -165,9 +163,7 @@ def test_phase_retrieval(
     ).forward(field_before_lens1)
 
     output_field = optical_setup.forward(field_after_slm)
-    intensity_target_opt = torch.pow(
-        torch.abs(output_field), 2
-    ).detach().numpy()
+    intensity_target_opt = output_field.intensity.detach().numpy()
 
     energy_get_intensity = np.sum(intensity_target_opt) * dx * dy
 
@@ -192,7 +188,7 @@ parameters_4f = [
     parameters_4f,
     [
         (10, 10, 1000, 1000, 660 * 1e-6, 0.5, 100., 10., 1e-4),
-        (5, 5, 1000, 1000, 1064 * 1e-6, 0.7, 150., 10., 1e-4),
+        (7, 8, 1000, 1000, 1064 * 1e-6, 0.7, 150., 10., 1e-4),
         (15, 8, 1500, 1000, 550 * 1e-6, 0.5, 120., 10., 1e-4)
     ]
 )
@@ -298,7 +294,7 @@ def test_4f_system(
 
     goal = (x_grid**2 + y_grid ** 2 <= 2).float()
 
-    phase_reconstruction_hio = phase_retrieval.retrieve_phase(
+    result_hio = phase_retrieval.retrieve_phase(
         source_intensity=torch.tensor(intensity_source),
         optical_setup=optical_setup,
         target_intensity=torch.tensor(intensity_target),
@@ -306,9 +302,9 @@ def test_4f_system(
         target_region=goal,
         initial_phase=None,
         method='HIO',
-        maxiter=15,
-        tol=1e-7
     )
+
+    phase_reconstruction_hio = result_hio.solution
 
     step = 2 * torch.pi / 256
     mask_reconstruction_hio = phase_reconstruction_hio // step
