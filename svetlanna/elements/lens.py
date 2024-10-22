@@ -1,6 +1,7 @@
+import torch
+
 from .element import Element
 from ..simulation_parameters import SimulationParameters
-import torch
 
 
 # TODO: check docstrings

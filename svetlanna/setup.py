@@ -18,6 +18,18 @@ class LinearOpticalSetup:
         self.elements = elements
         self.net = nn.Sequential(*elements)  # torch network
 
+        if all((hasattr(el, 'reverse') for el in self.elements)):
+
+            class ReverseNet(nn.Module):
+                def forward(self, Ein: Tensor) -> Tensor:
+                    for el in reversed(list(elements)):
+                        Ein = el.reverse(Ein)
+                    return Ein
+
+            self._reverse_net = ReverseNet()
+        else:
+            self._reverse_net = None
+
     def forward(self, input_wavefront: Tensor) -> Tensor:
         """
         A forward function for a network assembled from elements.
@@ -69,3 +81,8 @@ class LinearOpticalSetup:
             steps_wavefront.append(this_wavefront)  # add a wavefront to list of steps
 
         return optical_scheme, steps_wavefront
+
+    def reverse(self, Ein: Tensor) -> Tensor:
+        if self._reverse_net is not None:
+            return self._reverse_net(Ein)
+        raise TypeError('Reverse propagation is impossible. All elements should have reverse method.')

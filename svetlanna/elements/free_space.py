@@ -1,7 +1,8 @@
+from typing import Literal
+import torch
+
 from .element import Element
 from ..simulation_parameters import SimulationParameters
-import torch
-from typing import Literal
 
 
 # TODO: check docstrings
@@ -41,6 +42,7 @@ class FreeSpace(Element):
 
         self._wave_number = 2 * torch.pi / self._wavelength
 
+        # TODO: check shift
         # spatial frequencies
         self._kx_linear = torch.fft.fftfreq(self._x_nodes, torch.diff(
             self._x_linspace)[0]) * (2 * torch.pi)
@@ -141,7 +143,7 @@ class FreeSpace(Element):
                 impulse_response_fft = self.impulse_response_fresnel()
             else:
 
-                impulse_response_fft = self.impulse_response_angular_spectrum
+                impulse_response_fft = self.impulse_response_angular_spectrum()
         else:
             raise ValueError("Unknown forward propagation method")
 
