@@ -42,6 +42,7 @@ class FreeSpace(Element):
 
         self._wave_number = 2 * torch.pi / self._wavelength
 
+        # TODO: check shift
         # spatial frequencies
         self._kx_linear = torch.fft.fftfreq(self._x_nodes, torch.diff(
             self._x_linspace)[0]) * (2 * torch.pi)
