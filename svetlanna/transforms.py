@@ -1,6 +1,12 @@
+import warnings
+
 import torch
 from torch import nn
+import numpy as np
 from svetlanna.wavefront import Wavefront
+# TODO: Use a new version of SimulationParameters after a release!
+from svetlanna.wavefront import NumericalMesh
+from svetlanna import SimulationParameters
 
 
 class ToWavefront(nn.Module):
@@ -60,3 +66,76 @@ class ToWavefront(nn.Module):
 
         return img_wavefront
 
+
+class GaussModulation(nn.Module):
+    """
+    Multiplies an amplitude of a Wavefront on a gaussian.
+    """
+    def __init__(
+            self,
+            sim_params: SimulationParameters,
+            fwhm_x, fwhm_y,
+            peak_x=0., peak_y=0.
+    ):
+        """
+        Parameters
+        ----------
+        fwhm_x, fwhm_y : float
+            The full width at half maximum along axes (SI units).
+        peak_x, peak_y : float
+            Peak position in a plane (SI units).
+        """
+        super().__init__()
+        self.sim_params = sim_params
+        self.sigma_x = fwhm_x / 2 / np.sqrt(2 * np.log(2))  # sigmas
+        self.sigma_y = fwhm_y / 2 / np.sqrt(2 * np.log(2))
+        self.peak_x = peak_x  # peak coordinates
+        self.peak_y = peak_y
+        # generate a gaussian
+        self.gauss = self.get_gauss()
+
+    def get_gauss(self):
+        """
+        Generates a gaussian according to simulation parameters!
+        ...
+
+        Returns
+        -------
+        gauss_2d : torch.Tensor
+            A gaussian distribution in a 2D plane.
+        """
+        # TODO: Use a new version of SimulationParameters after a release!
+        num_mesh = NumericalMesh(self.sim_params)
+        gauss_2d = 1 * torch.exp(
+            -1 * (
+                    (num_mesh.x_grid - self.peak_x) ** 2 / 2 / self.sigma_x ** 2 +
+                    (num_mesh.y_grid - self.peak_y) ** 2 / 2 / self.sigma_y ** 2
+            )
+        )
+        return gauss_2d
+
+    def forward(self, wf: Wavefront) -> Wavefront:
+        """
+        Multiplies an input wavefront on a gauss.
+        ...
+
+        Parameters
+        ----------
+        wf : Wavefront
+            An input wavefront of a shape corresponding to simulation parameters.
+
+        Returns
+        -------
+        wf_gauss : Wavefront
+            A gaussian distribution in a 2D plane.
+        """
+        sim_nodes_shape = torch.Size([self.sim_params.y_nodes, self.sim_params.x_nodes])  # [W, H]
+        if not wf.size()[-2:] == sim_nodes_shape:
+            warnings.warn(
+                message='A shape of an input Wavefront does not match with SimulationParameters! Gauss was not applied!'
+            )
+            wf_gauss = wf
+        else:
+            wf_gauss = wf * self.gauss
+
+        return wf_gauss
