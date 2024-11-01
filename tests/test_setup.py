@@ -1,8 +1,7 @@
-from torch import Tensor
 from typing import Any
 import torch
 from svetlanna.parameters import ConstrainedParameter, Parameter
-from svetlanna import LinearOpticalSetup
+from svetlanna import LinearOpticalSetup, Wavefront
 from svetlanna import SimulationParameters
 from svetlanna.elements import Element
 from svetlanna.units import ureg
@@ -19,17 +18,17 @@ class SimpleElement(Element):
 
         self.a = a
 
-    def forward(self, Ein: Tensor) -> Tensor:
-        return Ein * self.a
+    def forward(self, input_field: Wavefront) -> Wavefront:
+        return input_field * self.a
 
 
 def test_init():
     sim_params = SimulationParameters(
-        x_size=10 * ureg.mm,
-        y_size=10 * ureg.mm,
-        x_nodes=10,
-        y_nodes=10,
-        wavelength=1
+        {
+            'W': torch.linspace(-5 * ureg.mm, 5 * ureg.mm, 10),
+            'H': torch.linspace(-5 * ureg.mm, 5 * ureg.mm, 10),
+            'wavelength': 1
+        }
     )
 
     a = torch.tensor(2)
@@ -56,11 +55,11 @@ def test_to_cuda_device():
     device = 'cuda'
 
     sim_params = SimulationParameters(
-        x_size=10 * ureg.mm,
-        y_size=10 * ureg.mm,
-        x_nodes=10,
-        y_nodes=10,
-        wavelength=1
+        {
+            'W': torch.linspace(-5 * ureg.mm, 5 * ureg.mm, 10),
+            'H': torch.linspace(-5 * ureg.mm, 5 * ureg.mm, 10),
+            'wavelength': 1
+        }
     )
 
     el1 = SimpleElement(

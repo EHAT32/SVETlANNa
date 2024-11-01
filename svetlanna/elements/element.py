@@ -39,18 +39,12 @@ class Element(nn.Module, metaclass=ABCMeta):
 
         self.simulation_parameters = simulation_parameters
 
-        self._x_size = self.simulation_parameters.x_size
-        self._y_size = self.simulation_parameters.y_size
-        self._x_nodes = self.simulation_parameters.x_nodes
-        self._y_nodes = self.simulation_parameters.y_nodes
-        self._wavelength = self.simulation_parameters.wavelength
+        self._x_nodes = self.simulation_parameters.axes.W.shape[0]
+        self._y_nodes = self.simulation_parameters.axes.H.shape[0]
+        self._wavelength = self.simulation_parameters.axes.wavelength
 
-        self._x_linspace = torch.linspace(
-            -self._x_size/2, self._x_size/2, self._x_nodes
-        )
-        self._y_linspace = torch.linspace(
-            -self._y_size/2, self._y_size/2, self._y_nodes
-        )
+        self._x_linspace = self.simulation_parameters.axes.W
+        self._y_linspace = self.simulation_parameters.axes.H
         self._x_grid, self._y_grid = torch.meshgrid(
             self._x_linspace, self._y_linspace, indexing='xy'
         )
