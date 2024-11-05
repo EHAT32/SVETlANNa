@@ -11,4 +11,6 @@ class PhaseRetrievalResult:
     solution: torch.Tensor
     cost_func: float
     cost_func_evolution: list
+
+    # TODO: взять терминологию как в scipy
     number_of_iterations: int

@@ -18,8 +18,8 @@ lens_parameters = [
 
 @pytest.mark.parametrize(
     lens_parameters,
-    [(8, 12, 1200, 1400, 1064 * 1e-6, 100, 10, 1e-5),
-     (8, 4, 1100, 1000, 1064 * 1e-6, 200, 15, 1e-5)]
+    [(8, 12, 1200, 1400, 1064 * 1e-6, 100, 10, 1e-7),
+     (8, 4, 1100, 1000, 1064 * 1e-6, 200, 15, 1e-7)]
 )
 def test_lens(
     ox_size: float,
