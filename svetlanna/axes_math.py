@@ -245,7 +245,7 @@ def tensor_dot(
         axis name of the first tensor
     b_axis : str | Iterable[str]
         axis name of the second tensor
-    strict : bool, optional
+    preserve_a_axis : bool, optional
         check if the resulting tensor axes are coincide with the `a` tensor axes, by default False
 
     Returns
