@@ -125,10 +125,11 @@ class SimulationParameters:
                 the first dimension corresponds to the cardinality of the second axis (`y_axis`) and
                 the second dimension corresponds to the cardinality of the first axis (`x_axis`).
         """
-        return torch.meshgrid(
+        a, b = torch.meshgrid(
             self.axes[x_axis], self.axes[y_axis],
             indexing='xy'
         )
+        return a.to(self.__device), b.to(self.__device)
 
     def axes_size(self, axs: str | Iterable[str]) -> torch.Size:
         """
