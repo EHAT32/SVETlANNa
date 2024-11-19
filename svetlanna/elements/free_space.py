@@ -85,11 +85,11 @@ class FreeSpace(Element):
         """
 
         wave_number_z = torch.sqrt(
-                self._wave_number**2 - (torch.pow(self._kx_grid, 2) + torch.pow(self._ky_grid, 2))  # noqa: E501
+                self._wave_number**2 - self.low_pass_filter * (torch.pow(self._kx_grid, 2) + torch.pow(self._ky_grid, 2))  # noqa: E501
             )
 
         # Fourier image of impulse response function
-        impulse_response_fft = 1 * self.low_pass_filter * torch.exp(
+        impulse_response_fft = torch.exp(
             1j * self.distance * wave_number_z
         )
 
@@ -104,7 +104,9 @@ class FreeSpace(Element):
             2d impulse response function for fresnel approximation
         """
 
-        wave_number_in_plane = torch.pow(self._kx_grid, 2) + torch.pow(self._ky_grid, 2)  # noqa: E501
+        wave_number_in_plane = (
+            torch.pow(self._kx_grid, 2) + torch.pow(self._ky_grid, 2)
+        ) * self.low_pass_filter
 
         k_eff, axis = tensor_dot(
             self._wavelength / (4 * torch.pi),
@@ -114,7 +116,7 @@ class FreeSpace(Element):
         )
 
         # Fourier image of impulse response function
-        impulse_response_fft = -1 * self.low_pass_filter * torch.exp(
+        impulse_response_fft = -torch.exp(
             1j * self.distance * (self._wave_number - k_eff)
         )
 
@@ -190,7 +192,7 @@ class FreeSpace(Element):
 
         return output_field
 
-    def reverse(self, transmission_field: torch.Tensor) -> torch.Tensor:
+    def reverse(self, transmission_field: torch.Tensor) -> Wavefront:
         """Method that calculates the field after propagating in the free space
         in back propagation
 
