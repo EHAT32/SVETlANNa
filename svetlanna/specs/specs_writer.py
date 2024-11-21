@@ -8,12 +8,9 @@ from dataclasses import dataclass
 from io import StringIO
 
 
-_HTML_STYLE = """<style>
-.svetlanna-specs-container {
-  display: block;
-}
-.svetlanna-specs-details {
-  padding-left: 2rem;
+HTML_SPECS_STYLE = """<style>
+.svetlanna-specs {
+font-family: monospace;
 }
 .svetlanna-specs-parameter-name {
     margin-top: 0.5rem;
@@ -22,26 +19,9 @@ _HTML_STYLE = """<style>
   margin-bottom: 0.5rem;
   padding-left: 2rem;
 }
-.svetlanna-specs-container > details {
-  border: 1px solid gray;
-  font-family: monospace;
-}
-.svetlanna-specs-container > details > summary {
-  background-color: #cff1f0;
-  padding: 0.5rem;
-  color: black;
-}
 .svetlanna-specs-representation > pre {
   white-space: pre-wrap;
 }
-/*
-.svetlanna-specs-container > details > summary:before {
-  content: "> ";
-}
-.svetlanna-specs-container > details[open] > summary:before {
-  content: "- ";
-}
-*/
 </style>
 """
 
@@ -229,17 +209,7 @@ def write_specs_to_html(
         directory,
     )
 
-    element_name = element.__class__.__name__
-    indexed_name = f"({element_index}) {element_name}"
-
-    s = f"""
-    {_HTML_STYLE}
-    <div class="svetlanna-specs-container">
-    <details>
-    <summary>{indexed_name}</summary>
-    <div class="svetlanna-specs-details">
-    <div>
-    """
+    s = '<div class="svetlanna-specs">'
 
     for writer_context in writer_context_generator:
 
@@ -268,8 +238,7 @@ def write_specs_to_html(
 <pre>{_stream.getvalue()}</pre>
             </div>
             """
-
-    s += '</div></div></details></div>'
+    s += "</div>"
     stream.write(s)
 
 

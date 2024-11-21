@@ -2,6 +2,20 @@ from typing import Iterable
 from .elements import Element
 from torch import nn
 from torch import Tensor
+import anywidget
+import traitlets
+import pathlib
+
+
+class LinearOpticalSetupWidget(anywidget.AnyWidget):
+    _esm = pathlib.Path(__file__).parent / 'static' / 'setup_widget.js'
+    _css = pathlib.Path(__file__).parent / 'static' / 'setup_widget.css'
+
+    elements = traitlets.List([]).tag(sync=True)
+    settings = traitlets.Dict({
+        'open': True,
+        'show_all': False,
+    }).tag(sync=True)
 
 
 class LinearOpticalSetup:
@@ -86,3 +100,24 @@ class LinearOpticalSetup:
         if self._reverse_net is not None:
             return self._reverse_net(Ein)
         raise TypeError('Reverse propagation is impossible. All elements should have reverse method.')
+
+    def show(self, **settings) -> LinearOpticalSetupWidget:
+        widget = LinearOpticalSetupWidget()
+        elements = []
+        for index, element in enumerate(self.elements):
+            elements.append({
+                'index': index,
+                'type': element.__class__.__name__,
+                'specs_html': element._repr_html_()
+            })
+
+        new_settings = {}
+        for name in widget.settings.keys():
+            if name in settings:
+                new_settings[name] = settings[name]
+            else:
+                new_settings[name] = widget.settings[name]
+
+        widget.settings = new_settings
+        widget.elements = elements
+        return widget

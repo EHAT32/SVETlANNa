@@ -1,0 +1,67 @@
+.cell-output-ipywidget-background {
+    background-color: transparent !important;
+ }
+ .jp-OutputArea-output {
+    background-color: transparent;
+ }  
+.svetlanna-elements-el-container {
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    padding: 0.5rem;
+}
+.svetlanna-element {
+    width: 2rem;
+    height: 10rem;
+    text-align: center;
+    color: black;
+    background-color: rgb(254, 254, 224);
+    vertical-align: middle;
+    flex-shrink: 0;
+    margin: 0.05rem;
+    border: 1px solid gray;
+    cursor: pointer;
+}
+.svetlanna-element-free-space {
+    width: 2rem;
+    height: 3rem;
+    background-color: #a0dbd9;
+    vertical-align: middle;
+    margin: 0.2rem;
+}
+.svetlanna-element-index {
+    display: flex;
+    margin: 1rem;
+    justify-content: center;
+    z-index: 999;
+    position: relative;
+    pointer-events: none;
+}
+.svetlanna-specs-container {
+    display: block;
+}
+.svetlanna-specs-details {
+    padding-left: 2rem;
+    max-height: 20rem;
+    overflow: scroll;
+}
+.svetlanna-specs-parameter-name {
+    margin-top: 0.5rem;
+}
+.svetlanna-specs-representation {
+    margin-bottom: 0.5rem;
+    padding-left: 2rem;
+}
+.svetlanna-specs-container > details {
+    border: 1px solid gray;
+    font-family: monospace;
+}
+.svetlanna-specs-container > details > summary {
+    background-color: #cff1f0;
+    padding: 0.5rem;
+    color: black;
+}
+.svetlanna-specs-representation > pre {
+    white-space: pre-wrap;
+}
