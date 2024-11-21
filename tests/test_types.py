@@ -4,7 +4,6 @@ import torch
 from svetlanna import elements
 from svetlanna import SimulationParameters
 from svetlanna import Wavefront as w
-torch.set_default_dtype(torch.float64)
 
 parameters = "default_type"
 
