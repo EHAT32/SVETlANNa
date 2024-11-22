@@ -3,7 +3,7 @@ from torch import nn
 from torch import Tensor
 from ..simulation_parameters import SimulationParameters
 from ..specs import PrettyReprRepr, ParameterSpecs
-from ..specs.specs_writer import write_specs_to_html, HTML_SPECS_STYLE
+from ..specs.specs_writer import write_specs_to_html
 from io import StringIO
 from typing import Iterable
 from ..parameters import BoundedParameter, Parameter
@@ -85,6 +85,6 @@ class Element(nn.Module, metaclass=ABCMeta):
         return super().__setattr__(name, value)
 
     def _repr_html_(self) -> str:
-        stream = StringIO(f'{HTML_SPECS_STYLE}')
+        stream = StringIO('')
         write_specs_to_html(self, 0, '', stream)
         return stream.getvalue()

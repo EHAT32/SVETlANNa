@@ -48,13 +48,6 @@
     max-height: 20rem;
     overflow: scroll;
 }
-.svetlanna-specs-parameter-name {
-    margin-top: 0.5rem;
-}
-.svetlanna-specs-representation {
-    margin-bottom: 0.5rem;
-    padding-left: 2rem;
-}
 .svetlanna-specs-container > details {
     border: 1px solid gray;
     font-family: monospace;
@@ -63,9 +56,6 @@
     background-color: #cff1f0;
     padding: 0.5rem;
     color: black;
-}
-.svetlanna-specs-representation > pre {
-    white-space: pre-wrap;
 }
 .svetlanna-field-picker {
     width: 1rem;

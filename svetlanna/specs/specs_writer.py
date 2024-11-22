@@ -8,24 +8,6 @@ from dataclasses import dataclass
 from io import StringIO
 
 
-HTML_SPECS_STYLE = """<style>
-.svetlanna-specs {
-font-family: monospace;
-}
-.svetlanna-specs-parameter-name {
-    margin-top: 0.5rem;
-}
-.svetlanna-specs-representation {
-  margin-bottom: 0.5rem;
-  padding-left: 2rem;
-}
-.svetlanna-specs-representation > pre {
-  white-space: pre-wrap;
-}
-</style>
-"""
-
-
 class Specsable(Protocol):
     def to_specs(self) -> Iterable['ParameterSpecs']:
         ...
@@ -209,12 +191,12 @@ def write_specs_to_html(
         directory,
     )
 
-    s = '<div class="svetlanna-specs">'
+    s = '<div style="font-family:monospace;">'
 
     for writer_context in writer_context_generator:
 
         specs_header = f"""
-        <div class="svetlanna-specs-parameter-name">
+        <div style="margin-top:0.5rem;">
             <b>{writer_context.parameter_name.value}</b>
         </div>
         """
@@ -234,8 +216,8 @@ def write_specs_to_html(
             )
 
             s += f"""
-            <div class="svetlanna-specs-representation">
-<pre>{_stream.getvalue()}</pre>
+            <div style="margin-bottom: 0.5rem;padding-left: 2rem;">
+<pre style="white-space:pre-wrap;">{_stream.getvalue()}</pre>
             </div>
             """
     s += "</div>"
