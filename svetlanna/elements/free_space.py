@@ -5,17 +5,12 @@ from .element import Element
 from ..simulation_parameters import SimulationParameters
 from ..parameters import OptimizableFloat
 from ..wavefront import Wavefront
-from ..axes_math import tensor_dot, cast_tensor
+from ..axes_math import tensor_dot
 
 
 class FreeSpace(Element):
     """A class that describes the propagating of the field in free space
     before two optical elements
-
-    Parameters
-    ----------
-    Element : _type_
-        _description_
     """
 
     def __init__(
@@ -44,43 +39,69 @@ class FreeSpace(Element):
 
         self._device = self.simulation_parameters.device
 
-        self._w_index = -self.simulation_parameters.axes.names[::-1].index('W') - 1  # noqa: E501
-        self._h_index = -self.simulation_parameters.axes.names[::-1].index('H') - 1  # noqa: E501
+        self._w_index = self.simulation_parameters.axes.index('W')
+        self._h_index = self.simulation_parameters.axes.index('H')
 
-        self._wave_number = 2 * torch.pi / self.simulation_parameters.__getitem__(  # noqa: E501
-            axis='wavelength'
-        )[..., None, None]
+        _x_linear = self.simulation_parameters.axes.W
+        _y_linear = self.simulation_parameters.axes.H
 
-        self._x_nodes = self.simulation_parameters.axes_size(axs='W')[0]
-        self._y_nodes = self.simulation_parameters.axes_size(axs='H')[0]
+        self._x_nodes = _x_linear.shape[0]
+        self._y_nodes = _y_linear.shape[0]
 
-        self._x_linear = self.simulation_parameters.__getitem__(axis='W')
-        self._y_linear = self.simulation_parameters.__getitem__(axis='H')
+        # spatial frequencies calculation
+        dx = _x_linear[1] - _x_linear[0] if self._x_nodes > 1 else 1.
+        dy = _y_linear[1] - _y_linear[0] if self._y_nodes > 1 else 1.
 
-        # spatial frequencies
         self._kx_linear = 2 * torch.pi * torch.fft.fftfreq(
             self._x_nodes,
-            torch.diff(self._x_linear)[0],
+            dx,
             device=self._device
         )
-
         self._ky_linear = 2 * torch.pi * torch.fft.fftfreq(
             self._y_nodes,
-            torch.diff(self._y_linear)[0],
+            dy,
             device=self._device
         )
 
-        # creating spatial frequencies
+        # spatial frequencies mesh
         self._kx_grid = self._kx_linear[None, :]
         self._ky_grid = self._ky_linear[:, None]
 
-        self._kx_grid = self._kx_grid[None, ...]
-        self._ky_grid = self._ky_grid[None, ...]
+        # (kx^2+ky^2) / k^2 relation
+        k = 2 * torch.pi / self.simulation_parameters.axes.wavelength
+        kx2ky2 = self._kx_grid**2 + self._ky_grid**2
+        relation, relation_axes = tensor_dot(
+            1 / k**2,
+            kx2ky2,
+            'wavelength',
+            ('H', 'W')
+        )
 
-        # creating low pass filter
-        self.low_pass_filter = (
-            (self._kx_grid**2 + self._ky_grid**2) <= self._wave_number**2
-        ).to(dtype=torch.get_default_dtype())
+        # low pass filter, (kx^2 + ky^2) <= k^2
+        use_filter = False
+        if use_filter:
+            self._low_pass_filter = (relation <= 1).to(self._kx_grid)
+        else:
+            self._low_pass_filter = 1
+
+        self._wave_number_x2y2 = self._low_pass_filter * kx2ky2
+        self._wave_number = k[..., None, None]
+        self._calc_axes = relation_axes  # axes tuple used during calculations
+
+        # kz
+        if use_filter:
+            # kz =
+            #      sqrt(k^2-(kx^2 + ky^2)) if (kx^2 + ky^2) <= k^2,
+            #      kz=|k| otherwise
+            self._wave_number_z = torch.sqrt(
+                self._wave_number**2 - self._wave_number_x2y2 * self._low_pass_filter  # noqa: E501
+            )
+        else:
+            self._wave_number_z = torch.sqrt(
+                self._wave_number**2 - self._wave_number_x2y2 + 0j
+            )
+        # kz taylored, used by Fresnel approximation
+        self._wave_number_z_eff_fresnel = - 0.5 * self._wave_number_x2y2 / self._wave_number  # noqa: E501
 
     def impulse_response_angular_spectrum(self) -> torch.Tensor:
         """Create the impulse response function for angular spectrum method
@@ -91,16 +112,11 @@ class FreeSpace(Element):
             2d impulse response function for angular spectrum method
         """
 
-        wave_number_z = torch.sqrt(
-                self._wave_number**2 - self.low_pass_filter * (torch.pow(self._kx_grid, 2) + torch.pow(self._ky_grid, 2))  # noqa: E501
-            )
-
-        # Fourier image of impulse response function
-        impulse_response_fft = self.low_pass_filter * torch.exp(
-            1j * self.distance * wave_number_z
+        # Fourier image of impulse response function,
+        # 0 if k^2 < (kx^2 + ky^2) [if use_filter]
+        return self._low_pass_filter * torch.exp(
+            1j * self.distance * self._wave_number_z
         )
-
-        return impulse_response_fft
 
     def impulse_response_fresnel(self) -> torch.Tensor:
         """Create the impulse response function for fresnel approximation
@@ -111,24 +127,11 @@ class FreeSpace(Element):
             2d impulse response function for fresnel approximation
         """
 
-        wave_number_in_plane = (
-            torch.pow(self._kx_grid, 2) + torch.pow(self._ky_grid, 2)
-        ) * self.low_pass_filter
-
-        k_eff, axis = tensor_dot(
-            self._wavelength / (4 * torch.pi),
-            wave_number_in_plane,
-            'wavelength',
-            ('wavelength', 'H', 'W')
-        )
-
         # Fourier image of impulse response function
-        impulse_response_fft = -self.low_pass_filter * torch.exp(
-            1j * self.distance * (self._wave_number - k_eff)
-        )
-
-        return cast_tensor(
-            impulse_response_fft, axis, self.simulation_parameters.axes.names
+        return self._low_pass_filter * torch.exp(
+            1j * self.distance * self._wave_number_z_eff_fresnel
+        ) * torch.exp(
+            1j * self.distance * self._wave_number
         )
 
     # TODO: ask for tol parameter
@@ -191,7 +194,13 @@ class FreeSpace(Element):
             raise ValueError("Unknown forward propagation method")
 
         # Fourier image of output field
-        output_field_fft = input_field_fft * impulse_response_fft
+        output_field_fft, _ = tensor_dot(
+            input_field_fft,
+            impulse_response_fft,
+            self.simulation_parameters.axes.names,
+            self._calc_axes,
+            preserve_a_axis=True
+        )
 
         output_field = torch.fft.ifft2(
             output_field_fft, dim=(self._h_index, self._w_index)
@@ -214,6 +223,8 @@ class FreeSpace(Element):
             Field after propagation in free space in back propagation
         """
 
+        # TODO: rewrite
+
         transmission_field_fft = torch.fft.fft2(
             transmission_field, dim=(self._h_index, self._w_index)
         )
@@ -221,7 +232,7 @@ class FreeSpace(Element):
         # square of the modulus of the wave vector in the plane oXY
         wave_number_in_plane = torch.pow(self._kx_grid, 2) + torch.pow(self._ky_grid, 2)  # noqa: E501
 
-        impulse_response = self.low_pass_filter * torch.exp(
+        impulse_response = self._low_pass_filter * torch.exp(
             1j * self.distance * (
                 -self._wave_number + wave_number_in_plane / (2 * self._wave_number)  # noqa: E501
             )
