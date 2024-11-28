@@ -72,7 +72,7 @@ class SpatialLightModulator(Element):
 
         return mul(
             input_field,
-            self.mask,
+            self.transmission_function,
             ('H', 'W'),
             self.simulation_parameters
         )
@@ -96,7 +96,7 @@ class SpatialLightModulator(Element):
 
         return mul(
             transmission_field,
-            torch.conj(self.mask),
+            torch.conj(self.transmission_function),
             ('H', 'W'),
             self.simulation_parameters
         )
