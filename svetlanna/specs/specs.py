@@ -100,8 +100,17 @@ class MarkdownRepresentation(
 ):
     """Representation that can be exported to markdown file"""
     @abstractmethod
-    def to_markdown(self, out: TextIO, context: ParameterSaveContext_):
-        ...
+    def to_markdown(self, out: TextIO, context: ParameterSaveContext_) -> None:
+        """Write the parameter related data to be shown in a markdown file.
+        The text should be written to the `out` stream.
+
+        Parameters
+        ----------
+        out : TextIO
+            output text stream
+        context : ParameterSaveContext_
+            the parameter save context
+        """
 
 
 class StrRepresentation(
@@ -110,8 +119,17 @@ class StrRepresentation(
 ):
     """Representation that can be exported in the text format"""
     @abstractmethod
-    def to_str(self, out: TextIO, context: ParameterSaveContext_):
-        ...
+    def to_str(self, out: TextIO, context: ParameterSaveContext_) -> None:
+        """Write the parameter related data to be shown as a plain text.
+        The text should be written to the `out` stream.
+
+        Parameters
+        ----------
+        out : TextIO
+            output text stream
+        context : ParameterSaveContext_
+            the parameter save context
+        """
 
 
 class ImageRepr(StrRepresentation, MarkdownRepresentation):
@@ -142,8 +160,16 @@ class ImageRepr(StrRepresentation, MarkdownRepresentation):
         self.mpl_kwargs = mpl_kwargs if mpl_kwargs is not None else {}
         self.show_image = show_image
 
-    def _draw_image(self, context: ParameterSaveContext, filepath: Path):
-        """Draw an image into the file"""
+    def draw_image(self, context: ParameterSaveContext, filepath: Path):
+        """Draw image into the file, using `matplotlib` package.
+
+        Parameters
+        ----------
+        context : ParameterSaveContext
+            the parameter save context
+        filepath : Path
+            path to the image file to be created
+        """
         import matplotlib.pyplot as plt
 
         with context.file(filepath=filepath) as f:
@@ -155,14 +181,14 @@ class ImageRepr(StrRepresentation, MarkdownRepresentation):
     def to_str(self, out: TextIO, context: ParameterSaveContext):
         filepath = context.get_new_filepath(extension=self.format)
 
-        self._draw_image(context=context, filepath=filepath)
+        self.draw_image(context=context, filepath=filepath)
 
         out.write(f'The image is saved to {filepath}\n')
 
     def to_markdown(self, out: TextIO, context: ParameterSaveContext):
         filepath = context.get_new_filepath(extension=self.format)
 
-        self._draw_image(context=context, filepath=filepath)
+        self.draw_image(context=context, filepath=filepath)
 
         out.write(f'The image is saved to `{filepath}`:\n')
         if self.show_image:
@@ -204,21 +230,30 @@ class NpyFileRepr(StrRepresentation):
         super().__init__()
         self.value = value
 
-    def _save_to_file(self, context: ParameterSaveContext, filepath: Path):
+    def save_to_file(self, context: ParameterSaveContext, filepath: Path):
+        """Save the parameter related data to `npy` file.
+
+        Parameters
+        ----------
+        context : ParameterSaveContext
+            the parameter save context
+        filepath : Path
+            path to the file to be created
+        """
         with context.file(filepath=filepath) as f:
             np.save(f, self.value)
 
     def to_str(self, out: TextIO, context: ParameterSaveContext):
         filepath = context.get_new_filepath(extension='npy')
 
-        self._save_to_file(context, filepath)
+        self.save_to_file(context, filepath)
 
         out.write(f'The numpy array is saved to {filepath}\n')
 
     def to_markdown(self, out: TextIO, context: ParameterSaveContext):
         filepath = context.get_new_filepath(extension='npy')
 
-        self._save_to_file(context, filepath)
+        self.save_to_file(context, filepath)
 
         out.write(f'The numpy array is saved to `{filepath}`\n')
 
