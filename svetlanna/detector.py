@@ -74,6 +74,7 @@ class DetectorProcessorClf(nn.Module):
             segmentation_type: str = 'strips',
             device: str | torch.device = torch.get_default_device(),
     ):
+        # TODO: add weights of class zones in __init__!
         """
         Parameters
         ----------
@@ -279,9 +280,43 @@ class DetectorProcessorClf(nn.Module):
         # TODO: maybe some function like SoftMax? but integrals can be large!
         return integrals_by_classes / integrals_by_classes.sum().item()
 
+    def batch_zone_integral(self, batch_detector_data: torch.Tensor, ind_class: int) -> torch.Tensor:
+        """
+        Returns an integral (sum) of a detector data over a selected zone (`ind_class`).
+        ...
+
+        Parameters
+        ----------
+        batch_detector_data : torch.Tensor
+            A batch of images from a detector.
+        ind_class : int
+            Index of a class.
+
+        Returns
+        -------
+        torch.Tensor
+            Sum of intensities over the selected zone for a batch.
+        """
+        mask_class = torch.where(ind_class == self.segmented_detector, 1, 0)
+        # sum by two last dimensions!
+        return (batch_detector_data * mask_class).sum(dim=(-2, -1))[:, 0]
+
     def batch_forward(self, batch_detector_data: torch.Tensor) -> torch.Tensor:
         """
         Calculates probabilities of belonging to classes for a batch of detector images.
+        ...
+
+        Parameters
+        ----------
+        batch_detector_data : torch.Tensor
+            A batch of images from a detector.
+            shape=(batch_size, ... 'H', 'W').
+
+        Returns
+        -------
+        torch.Tensor
+            A tensor of probabilities of element belonging to classes for further calculation of loss.
+            shape=(batch_size, self.num_classes)
         """
         # TODO: make `.forward()` universal for a batch and for a single wavefront!
         # TODO: use simulation parameters to understand if there is a batch dimension?
@@ -295,8 +330,9 @@ class DetectorProcessorClf(nn.Module):
         for ind_class in range(self.num_classes):
             mask_class = torch.where(ind_class == self.segmented_detector, 1, 0)
             integrals_by_classes[:, ind_class] = (
-                    batch_detector_data * mask_class  # by two last dimensions!
-            ).sum(dim=(-2, -1))[:, 0] * self.segments_weights[0, ind_class]
+                    self.batch_zone_integral(batch_detector_data, ind_class) *
+                    self.segments_weights[0, ind_class]
+            )
 
         return integrals_by_classes / torch.unsqueeze(integrals_by_classes.sum(dim=1), 1)
 
