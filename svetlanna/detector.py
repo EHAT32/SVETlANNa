@@ -352,8 +352,6 @@ class DetectorProcessorClf(nn.Module):
                     self.segments_weights[0, ind_class]
             )
 
-        print(integrals_by_classes)
-
         return integrals_by_classes / torch.unsqueeze(integrals_by_classes.sum(dim=1), 1)
 
     def to(self, device: str | torch.device | int) -> 'DetectorProcessorClf':
