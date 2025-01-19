@@ -29,6 +29,22 @@ parameters = [
             2 * lp.mm,     # radius, mm
             2000 * lp.mm,    # distance, mm
             2000 * lp.mm,    # focal_length, mm
+        ),
+        (
+            25 * lp.mm,  # ox_size
+            3000,   # ox_nodes
+            1064 * lp.nm,  # wavelength, mm
+            2 * lp.mm,     # radius, mm
+            100 * lp.mm,    # distance, mm
+            20 * lp.mm,    # focal_length, mm
+        ),
+        (
+            25 * lp.mm,  # ox_size
+            100,   # ox_nodes
+            123 * lp.nm,  # wavelength, mm
+            2 * lp.mm,     # radius, mm
+            200 * lp.mm,    # distance, mm
+            2100 * lp.mm,    # focal_length, mm
         )
     ]
 )
