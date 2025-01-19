@@ -6,6 +6,7 @@ from ..simulation_parameters import SimulationParameters
 from ..parameters import OptimizableFloat
 from ..wavefront import Wavefront
 from ..axes_math import tensor_dot
+from warnings import warn
 
 
 class FreeSpace(Element):
@@ -130,6 +131,39 @@ class FreeSpace(Element):
         self._wave_number_z_eff_fresnel = self.make_buffer(
             '_wave_number_z_eff_fresnel', wave_number_z_eff_fresnel
         )
+
+        # Warnings for fulfilling the method criteria
+        # See (9.32), (9.36) in
+        # Fourier Optics and Computational Imaging (2nd ed)
+        # by Kedar Khare, Mansi Butola and Sunaina Rajor
+        Lx = torch.abs(x_linear[-1] - x_linear[0])
+        Ly = torch.abs(y_linear[-1] - y_linear[0])
+        if method == 'AS':
+            kx_max = torch.max(torch.abs(kx_linear))
+            ky_max = torch.max(torch.abs(ky_linear))
+            x_condition = kx_max >= k / torch.sqrt(1 + (2*distance / Lx)**2)
+            y_condition = ky_max >= k / torch.sqrt(1 + (2*distance / Ly)**2)
+
+            if not torch.all(x_condition):
+                warn(
+                    'Aliasing problems may occur in the AS method. '
+                    'Consider reducing the distance or increasing the Nx*dx product.'
+                )
+            if not torch.all(y_condition):
+                warn(
+                    'Aliasing problems may occur in the AS method. '
+                    'Consider reducing the distance or increasing the Ny*dy product.'
+                )
+
+        if method == 'fresnel':
+            diagonal_squared = Lx**2 + Ly**2
+            condition = distance**3 > k / 8 * (diagonal_squared)**2
+
+            if not torch.all(condition):
+                warn(
+                    'The paraxial (near-axis) optics condition required for the Fresnel method is not satisfied. '
+                    'Consider increasing the distance or decreasing the screen size.'
+                )
 
     def impulse_response_angular_spectrum(self) -> torch.Tensor:
         """Creates the impulse response function for angular spectrum method
