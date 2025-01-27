@@ -38,7 +38,6 @@ def _context_generator(
     specs_directory = Path(
         directory, f'{element_index}_{element.__class__.__name__}'
     )
-    Path.mkdir(specs_directory, parents=True, exist_ok=True)
 
     parameter_representations = {}
 
@@ -208,19 +207,13 @@ def write_specs_to_html(
 
         representation = writer_context.representation.value
 
-        if isinstance(representation, (StrRepresentation, HTMLRepresentation)):
+        if isinstance(representation, HTMLRepresentation):
             _stream = StringIO('')
 
-            if isinstance(representation, HTMLRepresentation):
-                representation.to_html(
-                    out=_stream,
-                    context=writer_context.context
-                )
-            else:
-                representation.to_str(
-                    out=_stream,
-                    context=writer_context.context
-                )
+            representation.to_html(
+                out=_stream,
+                context=writer_context.context
+            )
 
             s += f"""
             <div style="margin-bottom: 0.5rem;padding-left: 2rem;">
@@ -234,10 +227,10 @@ def write_specs_to_html(
 def write_specs(
     *iterables: Specsable,
     filename: str = 'specs.txt',
-    directory: str | Path = '',
+    directory: str | Path = 'specs',
 ):
     Path.mkdir(Path(directory), parents=True, exist_ok=True)
-    path = Path(filename)
+    path = Path(directory, filename)
 
     with open(path, 'w') as file:
         if filename.endswith('.txt'):
@@ -258,5 +251,6 @@ def write_specs(
                 )
         else:
             raise ValueError(
-                "Unknown file extension. Filename should end with '.md' or '.txt'."
+                "Unknown file extension. ' \
+                'Filename should end with '.md' or '.txt'."
             )

@@ -34,7 +34,6 @@ class ParameterSaveContext:
         self.parameter_name = parameter_name
         self._directory = directory
         self._generated_files: list[Path] = []  # paths of all generated files
-        self.__stream = None
 
     def get_new_filepath(self, extension: str) -> Path:
         """Create a new filepath for a specific extension.
@@ -65,7 +64,25 @@ class ParameterSaveContext:
 
         filepath = Path(self._directory,  file_name).with_suffix(suffix)
         self._generated_files.append(filepath)
+
+        Path.mkdir(self._directory, parents=True, exist_ok=True)
+
         return filepath
+
+    def rel_filepath(self, filepath: Path) -> Path:
+        """Get relative to specs file filepath
+
+        Parameters
+        ----------
+        filepath : Path
+            absolute path
+
+        Returns
+        -------
+        Path
+            relative path
+        """
+        return filepath.relative_to(self._directory.parent)
 
     @contextmanager
     def file(self, filepath: Path) -> Generator[BufferedWriter, Any, None]:
@@ -203,23 +220,21 @@ class ImageRepr(StrRepresentation, MarkdownRepresentation, HTMLRepresentation):
 
         self.draw_image(context=context, filepath=filepath)
 
-        out.write(f'The image is saved to {filepath}\n')
+        out.write(f'The image is saved to {context.rel_filepath(filepath)}\n')
 
     def to_markdown(self, out: TextIO, context: ParameterSaveContext):
         filepath = context.get_new_filepath(extension=self.format)
 
         self.draw_image(context=context, filepath=filepath)
 
-        out.write(f'The image is saved to `{filepath}`\n')
+        out.write(f'The image is saved to `{context.rel_filepath(filepath)}`\n')
         if self.show_image:
-            out.write(f'\n![{context.parameter_name}]({filepath})\n\n')
+            out.write(f'\n![{context.parameter_name}]({context.rel_filepath(filepath)})\n\n')
 
     def to_html(self, out: TextIO, context: ParameterSaveContext):
-        filepath = context.get_new_filepath(extension=self.format)
 
-        image = self.draw_image(context=context, filepath=filepath)
+        image = Image.fromarray(self.value, mode=self.mode)
 
-        out.write(f'The image is saved to `{filepath}`\n')
         if self.show_image:
             buffer = BytesIO()
             image.save(buffer, format=self.format)
@@ -227,7 +242,7 @@ class ImageRepr(StrRepresentation, MarkdownRepresentation, HTMLRepresentation):
             out.write(f'\n<img class="spec-img" src="data:image/{self.format};base64, {encoded_image}"/>\n')
 
 
-class ReprRepr(StrRepresentation, MarkdownRepresentation):
+class ReprRepr(StrRepresentation, MarkdownRepresentation, HTMLRepresentation):
     """Representation of the parameter as a plain text.
     The `__repr__` method is used to generate the text.
     """
@@ -248,8 +263,11 @@ class ReprRepr(StrRepresentation, MarkdownRepresentation):
     def to_markdown(self, out: TextIO, context: ParameterSaveContext):
         out.write(f'```\n{repr(self.value)}\n```\n')
 
+    def to_html(self, out: TextIO, context: Any):
+        self.to_str(out, context)
 
-class NpyFileRepr(StrRepresentation):
+
+class NpyFileRepr(StrRepresentation, MarkdownRepresentation):
     """Representation of the parameter as a `.npy` file.
     """
     def __init__(self, value: ArrayLike):
@@ -280,17 +298,17 @@ class NpyFileRepr(StrRepresentation):
 
         self.save_to_file(context, filepath)
 
-        out.write(f'The numpy array is saved to {filepath}\n')
+        out.write(f'The numpy array is saved to {context.rel_filepath(filepath)}\n')
 
     def to_markdown(self, out: TextIO, context: ParameterSaveContext):
         filepath = context.get_new_filepath(extension='npy')
 
         self.save_to_file(context, filepath)
 
-        out.write(f'The numpy array is saved to `{filepath}`\n')
+        out.write(f'The numpy array is saved to `{context.rel_filepath(filepath)}`\n')
 
 
-class PrettyReprRepr(ReprRepr):
+class PrettyReprRepr(ReprRepr, HTMLRepresentation):
     """Same as ReprRepr but with better handling of
     Parameters and BoundedParameter"""
     def __init__(
@@ -340,6 +358,9 @@ class PrettyReprRepr(ReprRepr):
 
     def to_markdown(self, out: TextIO, context: ParameterSaveContext):
         out.write(f'```\n{self._repr()}\n```\n')
+
+    def to_html(self, out: TextIO, context: ParameterSaveContext):
+        self.to_str(out, context)
 
 
 class ParameterSpecs:
