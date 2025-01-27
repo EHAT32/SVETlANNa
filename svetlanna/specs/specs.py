@@ -1,6 +1,6 @@
 from typing import Iterable, Any, Generator, TextIO, Generic, TypeVar, Literal
 from abc import ABCMeta, abstractmethod
-from io import BufferedWriter
+from io import BufferedWriter, BytesIO
 from contextlib import contextmanager
 from pathlib import Path
 from PIL import Image
@@ -9,6 +9,7 @@ import numpy as np
 import torch
 import numbers
 from ..parameters import BoundedParameter
+import base64
 
 
 class ParameterSaveContext:
@@ -133,7 +134,26 @@ class StrRepresentation(
         """
 
 
-class ImageRepr(StrRepresentation, MarkdownRepresentation):
+class HTMLRepresentation(
+    Representation[ParameterSaveContext_],
+    metaclass=ABCMeta
+):
+    """Representation that can be exported to the HTML"""
+    @abstractmethod
+    def to_html(self, out: TextIO, context: ParameterSaveContext_) -> None:
+        """Write the parameter related data to be shown in a HTML file.
+        The text should be written to the `out` stream.
+
+        Parameters
+        ----------
+        out : TextIO
+            output text stream
+        context : ParameterSaveContext_
+            the parameter save context
+        """
+
+
+class ImageRepr(StrRepresentation, MarkdownRepresentation, HTMLRepresentation):
     """Representation of the parameter as an image.
     Image generation is based on the `pillow` package.
     """
@@ -161,7 +181,7 @@ class ImageRepr(StrRepresentation, MarkdownRepresentation):
         self.mode = mode
         self.show_image = show_image
 
-    def draw_image(self, context: ParameterSaveContext, filepath: Path):
+    def draw_image(self, context: ParameterSaveContext, filepath: Path) -> Image.Image:
         """Draw image into the file, using `matplotlib` package.
 
         Parameters
@@ -175,6 +195,8 @@ class ImageRepr(StrRepresentation, MarkdownRepresentation):
         with context.file(filepath=filepath) as f:
             image = Image.fromarray(self.value, mode=self.mode)
             image.save(f, format=self.format)
+
+        return image
 
     def to_str(self, out: TextIO, context: ParameterSaveContext):
         filepath = context.get_new_filepath(extension=self.format)
@@ -191,6 +213,18 @@ class ImageRepr(StrRepresentation, MarkdownRepresentation):
         out.write(f'The image is saved to `{filepath}`\n')
         if self.show_image:
             out.write(f'\n![{context.parameter_name}]({filepath})\n\n')
+
+    def to_html(self, out: TextIO, context: ParameterSaveContext):
+        filepath = context.get_new_filepath(extension=self.format)
+
+        image = self.draw_image(context=context, filepath=filepath)
+
+        out.write(f'The image is saved to `{filepath}`\n')
+        if self.show_image:
+            buffer = BytesIO()
+            image.save(buffer, format=self.format)
+            encoded_image = base64.b64encode(buffer.getvalue()).decode()
+            out.write(f'\n<img class="spec-img" src="data:image/{self.format};base64, {encoded_image}"/>\n')
 
 
 class ReprRepr(StrRepresentation, MarkdownRepresentation):

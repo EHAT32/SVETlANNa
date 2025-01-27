@@ -2,6 +2,7 @@ from typing import Iterable, TextIO, Protocol, TypeVar, Generic
 from .specs import ParameterSpecs
 from .specs import ParameterSaveContext, Representation
 from .specs import StrRepresentation, MarkdownRepresentation
+from .specs import HTMLRepresentation
 from pathlib import Path
 import itertools
 from dataclasses import dataclass
@@ -207,13 +208,19 @@ def write_specs_to_html(
 
         representation = writer_context.representation.value
 
-        if isinstance(representation, StrRepresentation):
+        if isinstance(representation, (StrRepresentation, HTMLRepresentation)):
             _stream = StringIO('')
 
-            representation.to_str(
-                out=_stream,
-                context=writer_context.context
-            )
+            if isinstance(representation, HTMLRepresentation):
+                representation.to_html(
+                    out=_stream,
+                    context=writer_context.context
+                )
+            else:
+                representation.to_str(
+                    out=_stream,
+                    context=writer_context.context
+                )
 
             s += f"""
             <div style="margin-bottom: 0.5rem;padding-left: 2rem;">
