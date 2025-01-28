@@ -56,8 +56,12 @@ class FreeSpace(Element):
         dy = (y_linear[1] - y_linear[0]) if y_nodes > 1 else 1.
 
         # Compute wave vectors
-        kx_linear = 2 * torch.pi * torch.fft.fftfreq(x_nodes, dx, device=device)
-        ky_linear = 2 * torch.pi * torch.fft.fftfreq(y_nodes, dy, device=device)
+        kx_linear = 2 * torch.pi * torch.fft.fftfreq(
+            x_nodes, dx, device=device
+        )
+        ky_linear = 2 * torch.pi * torch.fft.fftfreq(
+            y_nodes, dy, device=device
+        )
 
         # Compute wave vectors grids
         kx_grid = kx_linear[None, :]  # shape: (1, 'W')
@@ -85,7 +89,7 @@ class FreeSpace(Element):
         # The filter removes contribution of evanescent waves
         if use_legacy_filter:
             # TODO: Shouldn't the 88'th string be here?
-            condition = (relation <= 1)  # calculate the low pass filter condition
+            condition = (relation <= 1)  # calculate the low pass filter condition  # noqa
             condition = condition.to(kx_grid)  # cast bool to float
 
             # Registering Buffer for _low_pass_filter
@@ -96,7 +100,7 @@ class FreeSpace(Element):
             self._low_pass_filter = 1
 
         # Reshape wave vector for further calculations
-        wave_number = k[..., None, None]  # shape: ('wavelength', 1, 1) or (1, 1)
+        wave_number = k[..., None, None]  # shape: ('wavelength', 1, 1) or (1, 1)  # noqa
 
         # Registering Buffer for _wave_number
         self._wave_number = self.make_buffer(
@@ -147,12 +151,14 @@ class FreeSpace(Element):
             if not torch.all(x_condition):
                 warn(
                     'Aliasing problems may occur in the AS method. '
-                    'Consider reducing the distance or increasing the Nx*dx product.'
+                    'Consider reducing the distance '
+                    'or increasing the Nx*dx product.'
                 )
             if not torch.all(y_condition):
                 warn(
                     'Aliasing problems may occur in the AS method. '
-                    'Consider reducing the distance or increasing the Ny*dy product.'
+                    'Consider reducing the distance '
+                    'or increasing the Ny*dy product.'
                 )
 
         if method == 'fresnel':
@@ -161,8 +167,10 @@ class FreeSpace(Element):
 
             if not torch.all(condition):
                 warn(
-                    'The paraxial (near-axis) optics condition required for the Fresnel method is not satisfied. '
-                    'Consider increasing the distance or decreasing the screen size.'
+                    'The paraxial (near-axis) optics condition '
+                    'required for the Fresnel method is not satisfied. '
+                    'Consider increasing the distance '
+                    'or decreasing the screen size.'
                 )
 
     def impulse_response_angular_spectrum(self) -> torch.Tensor:
@@ -311,11 +319,11 @@ class FreeSpace(Element):
 
         # Fourier image of output field
         incident_field_fft, _ = tensor_dot(
-            a=transmission_field_fft,  # example shape: (5, 'wavelength', 1, 'H', 'W')
+            a=transmission_field_fft,  # example shape: (5, 'wavelength', 1, 'H', 'W')  # noqa
             b=impulse_response_fft,  # example shape: ('wavelength', 'H', 'W')
             a_axis=self.simulation_parameters.axes.names,
             b_axis=self._calc_axes,
-            preserve_a_axis=True  # check that the output has the first input shape
+            preserve_a_axis=True  # check that the output has the first input shape  # noqa
         )  # example output shape: (5, 'wavelength', 1, 'H', 'W')
 
         incident_field = torch.fft.ifft2(
