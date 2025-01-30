@@ -5,8 +5,8 @@ from ..simulation_parameters import SimulationParameters
 from ..specs import PrettyReprRepr, ParameterSpecs
 from ..specs.specs_writer import write_specs_to_html
 from io import StringIO
-from typing import Iterable, TypeVar
-from ..parameters import BoundedParameter, Parameter
+from typing import Iterable, TypeVar, TYPE_CHECKING
+from ..parameters import ConstrainedParameter, Parameter
 from ..wavefront import Wavefront
 
 
@@ -80,7 +80,7 @@ class Element(nn.Module, metaclass=ABCMeta):
 
         # BoundedParameter and Parameter are handled by pointing
         # auxiliary attribute on them with a name plus INNER_PARAMETER_SUFFIX
-        if isinstance(value, (BoundedParameter, Parameter)):
+        if isinstance(value, (ConstrainedParameter, Parameter)):
             super().__setattr__(
                 name + INNER_PARAMETER_SUFFIX, value.inner_storage
             )
@@ -159,3 +159,8 @@ class Element(nn.Module, metaclass=ABCMeta):
             return self.make_buffer(name, value, persistent=True)
         return value
 
+    # === methods below are added for typing only ===
+
+    if TYPE_CHECKING:
+        def __call__(self, input_field: Wavefront) -> Wavefront:
+            ...
