@@ -91,7 +91,7 @@ class DiffractiveLayer(Element):
             ParameterSpecs(
                 'mask', [
                     PrettyReprRepr(self.mask),
-                    ImageRepr(self.mask.detach().numpy()),
+                    ImageRepr(self.mask.numpy(force=True)),
                 ]
             ),
             ParameterSpecs(
