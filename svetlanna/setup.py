@@ -1,4 +1,4 @@
-from typing import Iterable, Literal
+from typing import Iterable, Literal, Union
 from .elements import Element
 from .simulation_parameters import SimulationParameters
 from torch import nn
@@ -6,11 +6,17 @@ from torch import Tensor
 import torch
 import base64
 import io
-from .visualization.widgets import LinearOpticalSetupWidget
-from .visualization.widgets import LinearOpticalSetupStepwiseForwardWidget
+from .visualization import LinearOpticalSetupWidget
+from .visualization import LinearOpticalSetupStepwiseForwardWidget
 
 
-StepwisePlotTypes = Literal['A'] | Literal['I'] | Literal['phase'] | Literal['Re'] | Literal['Im'] 
+StepwisePlotTypes = Union[
+    Literal['A'],
+    Literal['I'],
+    Literal['phase'],
+    Literal['Re'],
+    Literal['Im']
+]
 
 
 class LinearOpticalSetup:
@@ -51,13 +57,15 @@ class LinearOpticalSetup:
         Returns
         -------
         torch.Tensor
-            A wavefront after the last element of the network (output of the network).
+            A wavefront after the last element of
+            the network (output of the network).
         """
         return self.net(input_wavefront)
 
     def stepwise_forward(self, input_wavefront: Tensor):
         """
-        Function that consistently applies forward method of each element to an input wavefront.
+        Function that consistently applies forward method of each element
+        to an input wavefront.
 
         Parameters
         ----------
@@ -69,7 +77,8 @@ class LinearOpticalSetup:
         str
             A string that represents a scheme of a propagation through a setup.
         list(torch.Tensor)
-            A list of an input wavefront evolution during a propagation through a setup.
+            A list of an input wavefront evolution
+            during a propagation through a setup.
         """
         this_wavefront = input_wavefront
         # list of wavefronts while propagation of an initial wavefront through the system
@@ -94,18 +103,33 @@ class LinearOpticalSetup:
     def reverse(self, Ein: Tensor) -> Tensor:
         if self._reverse_net is not None:
             return self._reverse_net(Ein)
-        raise TypeError('Reverse propagation is impossible. All elements should have reverse method.')
+        raise TypeError(
+            'Reverse propagation is impossible. '
+            'All elements should have reverse method.'
+        )
 
     def show(self, **settings) -> LinearOpticalSetupWidget:
+        """Show the setup and its specs via widget
+
+        Returns
+        -------
+        LinearOpticalSetupWidget
+            Widget
+        """
         widget = LinearOpticalSetupWidget()
+
+        # prepare elements for widget
         elements = []
         for index, element in enumerate(self.elements):
-            elements.append({
-                'index': index,
-                'type': element.__class__.__name__,
-                'specs_html': element._repr_html_()
-            })
+            elements.append(
+                {
+                    'index': index,
+                    'type': element.__class__.__name__,
+                    'specs_html': element._repr_html_()
+                }
+            )
 
+        # widget settings
         new_settings = {}
         for name in widget.settings.keys():
             if name in settings:
@@ -113,6 +137,7 @@ class LinearOpticalSetup:
             else:
                 new_settings[name] = widget.settings[name]
 
+        # set elements and settings
         widget.settings = new_settings
         widget.elements = elements
         return widget
@@ -124,15 +149,36 @@ class LinearOpticalSetup:
         types_to_plot: tuple[StepwisePlotTypes, ...] = ('I', 'phase'),
         **settings
     ) -> LinearOpticalSetupStepwiseForwardWidget:
+        """Show field propagation in the setup via widget
+
+        Parameters
+        ----------
+        input_wavefront : Tensor
+            input wavefront
+        simulation_parameters : SimulationParameters
+            simulation parameters
+        types_to_plot : tuple[StepwisePlotTypes, ...], optional
+            field properties to plot, by default ('I', 'phase')
+
+        Returns
+        -------
+        LinearOpticalSetupStepwiseForwardWidget
+            widget
+        """
         widget = LinearOpticalSetupStepwiseForwardWidget()
+
+        # prepare elements for widget
         elements = []
         for index, element in enumerate(self.elements):
-            elements.append({
-                'index': index,
-                'type': element.__class__.__name__,
-                'specs_html': element._repr_html_()
-            })
+            elements.append(
+                {
+                    'index': index,
+                    'type': element.__class__.__name__,
+                    'specs_html': element._repr_html_()
+                }
+            )
 
+        # widget settings
         new_settings = {}
         for name in widget.settings.keys():
             if name in settings:
@@ -140,6 +186,7 @@ class LinearOpticalSetup:
             else:
                 new_settings[name] = widget.settings[name]
 
+        # set elements and settings
         widget.settings = new_settings
         widget.elements = elements
 
@@ -225,6 +272,7 @@ class LinearOpticalSetup:
                 base64.b64encode(stream.getvalue()).decode()
             )
 
+        # set plots
         widget.wavefront_images = wavefront_images
 
         return widget
