@@ -10,7 +10,7 @@ from ..wavefront import Wavefront
 
 INNER_PARAMETER_SUFFIX = '_svtlnn_inner_parameter'
 
-_T = TypeVar('_T', bound=Tensor)
+_T = TypeVar('_T', Tensor, None)
 _V = TypeVar('_V')
 
 
@@ -42,15 +42,6 @@ class Element(nn.Module, metaclass=ABCMeta):
 
         self.simulation_parameters = simulation_parameters
 
-        self._x_nodes = self.simulation_parameters.axes.W.shape[0]
-        self._y_nodes = self.simulation_parameters.axes.H.shape[0]
-        self._wavelength = self.simulation_parameters.axes.wavelength
-
-        self._x_linspace = self.simulation_parameters.axes.W
-        self._y_linspace = self.simulation_parameters.axes.H
-
-        self._x_grid, self._y_grid = self.simulation_parameters.meshgrid(x_axis='W', y_axis='H')    # noqa: E501
-
     # TODO: check doctrings
     @abstractmethod
     def forward(self, input_field: Wavefront) -> Wavefront:
@@ -62,11 +53,6 @@ class Element(nn.Module, metaclass=ABCMeta):
         """Create specs"""
 
         for (name, parameter) in self.named_parameters():
-
-            # BoundedParameter and Parameter support
-            if name.endswith(INNER_PARAMETER_SUFFIX):
-                name = name.removesuffix(INNER_PARAMETER_SUFFIX)
-                parameter = self.__getattribute__(name)
 
             yield ParameterSpecs(
                 parameter_name=name,
@@ -115,6 +101,14 @@ class Element(nn.Module, metaclass=ABCMeta):
         _T
             the value passed to the method
         """
+
+        if value is not None:
+            if value.device != self.simulation_parameters.device:
+                raise ValueError(
+                    f"Tensor to be buffered as {name} must be on "
+                    "the simulation parameters device."
+                )
+
         self.register_buffer(
             name, value, persistent=persistent
         )
@@ -146,6 +140,12 @@ class Element(nn.Module, metaclass=ABCMeta):
         _V
             the value passed to the method
         """
+        if isinstance(value, Tensor):
+            if value.device != self.simulation_parameters.device:
+                raise ValueError(
+                    f"Parameter {name} must be on "
+                    "the simulation parameters device."
+                )
         if isinstance(value, (nn.Parameter, Parameter)):
             return value
         if isinstance(value, Tensor):
