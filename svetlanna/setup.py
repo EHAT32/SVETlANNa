@@ -2,6 +2,7 @@ from typing import Iterable
 from .elements import Element
 from torch import nn
 from torch import Tensor
+from warnings import warn
 
 
 class LinearOpticalSetup:
@@ -15,14 +16,28 @@ class LinearOpticalSetup:
         elements : Iterable[Element]
             A set of optical elements which make up a setup.
         """
+        elements = list(elements)
         self.elements = elements
         self.net = nn.Sequential(*elements)  # torch network
+
+        if len(elements) > 0:
+            first_sim_params = elements[0].simulation_parameters
+
+            def check_sim_params(element: Element) -> bool:
+                return element.simulation_parameters is first_sim_params
+
+            if not all(map(check_sim_params, self.elements)):
+                warn(
+                    "Some elements have different SimulationParameters "
+                    "instance. It is more convenient to use "
+                    "the same SimulationParameters instance."
+                )
 
         if all((hasattr(el, 'reverse') for el in self.elements)):
 
             class ReverseNet(nn.Module):
                 def forward(self, Ein: Tensor) -> Tensor:
-                    for el in reversed(list(elements)):
+                    for el in reversed(elements):
                         Ein = el.reverse(Ein)
                     return Ein
 
