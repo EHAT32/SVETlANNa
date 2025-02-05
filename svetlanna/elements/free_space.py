@@ -18,7 +18,7 @@ class FreeSpace(Element):
         self,
         simulation_parameters: SimulationParameters,
         distance: OptimizableFloat,
-        method: Literal['auto', 'fresnel', 'AS']
+        method: Literal['fresnel', 'AS']
     ):
         """Free space element.
 
@@ -28,11 +28,10 @@ class FreeSpace(Element):
             An instance describing the optical system's simulation parameters.
         distance : float
             The distance of the free space propagation.
-        method : Literal['auto', 'fresnel', 'AS']
+        method : Literal['fresnel', 'AS']
             Method describing propagation in free space
                 (1) 'AS' - angular spectrum method,
                 (2) 'fresnel' - fresnel approximation,
-                (3) 'auto' - auto mode
         """
         super().__init__(simulation_parameters)
 
@@ -206,13 +205,8 @@ class FreeSpace(Element):
             (1j * self.distance) * self._wave_number
         )
 
-    def _impulse_response(self, tol: float = 1e-3) -> torch.Tensor:
+    def _impulse_response(self) -> torch.Tensor:
         """Calculates the impulse response function based on selected method
-
-        Parameters
-        ----------
-        tol : float, optional
-            tolerance for auto method, by default 1e-3
 
         Returns
         -------
@@ -225,26 +219,6 @@ class FreeSpace(Element):
 
         elif self.method == 'fresnel':
             return self.impulse_response_fresnel()
-
-        # TODO: fix auto mod
-        # TODO: Didn't we plan to exclude `auto` method at all?
-        elif self.method == 'auto':
-
-            radius_squared = self._x_grid**2 + self._y_grid**2
-
-            # criterion for Fresnel approximation
-            fresnel_criterion = (
-                torch.pi *
-                torch.max(
-                    torch.pow(radius_squared, 2)
-                ) /
-                (4 * self._wavelength * (self.distance ** 3))
-            )
-
-            if fresnel_criterion <= tol:
-                return self.impulse_response_fresnel()
-            else:
-                return self.impulse_response_angular_spectrum()
 
         raise ValueError("Unknown forward propagation method")
 
