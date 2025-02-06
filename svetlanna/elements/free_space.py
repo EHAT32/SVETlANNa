@@ -6,11 +6,12 @@ from ..simulation_parameters import SimulationParameters
 from ..parameters import OptimizableFloat
 from ..wavefront import Wavefront
 from ..axes_math import tensor_dot
+from warnings import warn
 
 
 class FreeSpace(Element):
     """A class that describes a propagation of the field in free space
-    before two optical elements
+    between two optical elements
     """
 
     def __init__(
@@ -19,14 +20,14 @@ class FreeSpace(Element):
         distance: OptimizableFloat,
         method: Literal['auto', 'fresnel', 'AS']
     ):
-        """Constructor method
+        """Free space element.
 
         Parameters
         ----------
         simulation_parameters : SimulationParameters
-            Class exemplar, that describes optical system
+            An instance describing the optical system's simulation parameters.
         distance : float
-            distance between two optical elements
+            The distance of the free space propagation.
         method : Literal['auto', 'fresnel', 'AS']
             Method describing propagation in free space
                 (1) 'AS' - angular spectrum method,
@@ -35,8 +36,8 @@ class FreeSpace(Element):
         """
         super().__init__(simulation_parameters)
 
-        self.distance = distance
-        self.method = method
+        self.distance = self.process_parameter('distance', distance)
+        self.method = self.process_parameter('method', method)
 
         # params extracted from SimulationParameters
         device = self.simulation_parameters.device
@@ -82,22 +83,24 @@ class FreeSpace(Element):
 
         # Legacy low pass filter, (kx^2+ky^2) / k^2 <= 1
         # The filter removes contribution of evanescent waves
-        self._low_pass_filter: torch.Tensor | int  # <- Registering Buffer for _low_pass_filter
         if use_legacy_filter:
             # TODO: Shouldn't the 88'th string be here?
             condition = (relation <= 1)  # calculate the low pass filter condition
             condition = condition.to(kx_grid)  # cast bool to float
-            self.register_buffer(
-                '_low_pass_filter', condition, persistent=False
+
+            # Registering Buffer for _low_pass_filter
+            self._low_pass_filter = self.make_buffer(
+                '_low_pass_filter', condition
             )
         else:
             self._low_pass_filter = 1
 
         # Reshape wave vector for further calculations
         wave_number = k[..., None, None]  # shape: ('wavelength', 1, 1) or (1, 1)
-        self._wave_number: torch.Tensor  # <- Registering Buffer for _wave_number
-        self.register_buffer(
-            '_wave_number', wave_number, persistent=False
+
+        # Registering Buffer for _wave_number
+        self._wave_number = self.make_buffer(
+            '_wave_number', wave_number
         )
 
         self._calc_axes = relation_axes  # axes tuple used during calculations
@@ -116,24 +119,54 @@ class FreeSpace(Element):
                 self._wave_number ** 2 - kx2ky2 + 0j
             )  # 0j is required to convert argument to complex
 
-        self._wave_number_z: torch.Tensor  # <- Registering Buffer for _wave_number_z
-        self.register_buffer(
-            '_wave_number_z', wave_number_z, persistent=False
+        # Registering Buffer for _wave_number_z
+        self._wave_number_z = self.make_buffer(
+            '_wave_number_z', wave_number_z
         )
 
         # Calculate kz taylored, used by Fresnel approximation
         wave_number_z_eff_fresnel = - 0.5 * kx2ky2 / self._wave_number
 
-        self._wave_number_z_eff_fresnel: torch.Tensor
-        #  ^- Registering Buffer for _wave_number_z_eff_fresnel
-        self.register_buffer(
-            '_wave_number_z_eff_fresnel', wave_number_z_eff_fresnel, persistent=False
+        # Registering Buffer for _wave_number_z_eff_fresnel
+        self._wave_number_z_eff_fresnel = self.make_buffer(
+            '_wave_number_z_eff_fresnel', wave_number_z_eff_fresnel
         )
 
-        # TODO: Maybe add a separate method to define all necessary Buffers?
+        # Warnings for fulfilling the method criteria
+        # See (9.32), (9.36) in
+        # Fourier Optics and Computational Imaging (2nd ed)
+        # by Kedar Khare, Mansi Butola and Sunaina Rajor
+        Lx = torch.abs(x_linear[-1] - x_linear[0])
+        Ly = torch.abs(y_linear[-1] - y_linear[0])
+        if method == 'AS':
+            kx_max = torch.max(torch.abs(kx_linear))
+            ky_max = torch.max(torch.abs(ky_linear))
+            x_condition = kx_max >= k / torch.sqrt(1 + (2*distance / Lx)**2)
+            y_condition = ky_max >= k / torch.sqrt(1 + (2*distance / Ly)**2)
+
+            if not torch.all(x_condition):
+                warn(
+                    'Aliasing problems may occur in the AS method. '
+                    'Consider reducing the distance or increasing the Nx*dx product.'
+                )
+            if not torch.all(y_condition):
+                warn(
+                    'Aliasing problems may occur in the AS method. '
+                    'Consider reducing the distance or increasing the Ny*dy product.'
+                )
+
+        if method == 'fresnel':
+            diagonal_squared = Lx**2 + Ly**2
+            condition = distance**3 > k / 8 * (diagonal_squared)**2
+
+            if not torch.all(condition):
+                warn(
+                    'The paraxial (near-axis) optics condition required for the Fresnel method is not satisfied. '
+                    'Consider increasing the distance or decreasing the screen size.'
+                )
 
     def impulse_response_angular_spectrum(self) -> torch.Tensor:
-        """Create the impulse response function for angular spectrum method
+        """Creates the impulse response function for angular spectrum method
 
         Returns
         -------
@@ -149,7 +182,7 @@ class FreeSpace(Element):
         )  # Comment: Here we use the following exponent: `exp(+ i * d * k)`
 
     def impulse_response_fresnel(self) -> torch.Tensor:
-        """Create the impulse response function for fresnel approximation
+        """Creates the impulse response function for fresnel approximation
 
         Returns
         -------
@@ -166,7 +199,7 @@ class FreeSpace(Element):
         )
 
     def _impulse_response(self, tol: float = 1e-3) -> torch.Tensor:
-        """Calculate the impulse response function based on selected method
+        """Calculates the impulse response function based on selected method
 
         Parameters
         ----------
@@ -212,7 +245,7 @@ class FreeSpace(Element):
         self,
         input_field: Wavefront
     ) -> Wavefront:
-        """Method that calculates the field after propagating in the free space
+        """Calculates the field after propagating in the free space
 
         Parameters
         ----------
@@ -253,19 +286,19 @@ class FreeSpace(Element):
 
         return output_field
 
-    def reverse(self, transmission_field: torch.Tensor) -> Wavefront:
+    def reverse(self, transmission_field: Wavefront) -> Wavefront:
         # TODO: Check the description...
         """Calculate the field after it propagates in the free space
         in the backward direction.
 
         Parameters
         ----------
-        transmission_field : torch.Tensor
+        transmission_field : Wavefront
             Field to be propagated in the backward direction
 
         Returns
         -------
-        torch.Tensor
+        Wavefront
             Propagated in the backward direction field
         """
 
@@ -282,7 +315,7 @@ class FreeSpace(Element):
             b=impulse_response_fft,  # example shape: ('wavelength', 'H', 'W')
             a_axis=self.simulation_parameters.axes.names,
             b_axis=self._calc_axes,
-            preserve_a_axis=True  # check that the output has the input shape
+            preserve_a_axis=True  # check that the output has the first input shape
         )  # example output shape: (5, 'wavelength', 1, 'H', 'W')
 
         incident_field = torch.fft.ifft2(
