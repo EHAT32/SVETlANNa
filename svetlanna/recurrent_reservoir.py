@@ -19,6 +19,7 @@ class RecurrentReservoir(nn.Module):
         backward_elements: Iterable[Element],
         attenuation_forward: float = 0,
         attenuation_backward: float = 0,
+        time_masking: torch.Tensor = torch.tensor([1.]),
         init_hidden: Wavefront | None = None,
         device: str | torch.device = torch.get_default_device(),
     ) -> None:
@@ -35,6 +36,8 @@ class RecurrentReservoir(nn.Module):
         attenuation_forward, attenuation_backward: float
             Coefficients which characterize a part of energy that dissipates while forward and backward propagation.
             Values lie between 0 and 1.
+        time_masking : torch.Tensor
+            Turning one input Wavefront in several Wavefronts (by sequentially multiplying on values from a mask).
         init_hidden : Wavefront | None
             A n initial hidden wavefront ("a cold state").
         device : torch.device
@@ -56,6 +59,9 @@ class RecurrentReservoir(nn.Module):
         # attenuation constants
         self.attenuation_forward = attenuation_forward
         self.attenuation_backward = attenuation_backward
+
+        # time masking for each input wavefront
+        self.time_masking = time_masking.to(self.__device)
 
         # a hidden state initialization
         if init_hidden is None:
@@ -97,17 +103,19 @@ class RecurrentReservoir(nn.Module):
             An output wavefront after propagation of an input wavefront (+ hidden wavefront)
             through a forward net (output of the network).
         """
-        output_wavefront = input_wavefront + self.hidden_state
-        for el in self.forward_elements:
-            output_wavefront = el.forward(output_wavefront)
-        output_wavefront = output_wavefront * (1 - self.attenuation_forward) ** (1 / 2)
+        for mask_value in self.time_masking:  # turning one time step in several time steps
 
-        # get a next hidden by propagation of the output
-        hidden_state = output_wavefront
-        for el in self.backward_elements:
-            hidden_state = el.forward(hidden_state)
-        # update hidden state
-        self.hidden_state = hidden_state * (1 - self.attenuation_backward) ** (1 / 2)
+            output_wavefront = mask_value * input_wavefront + self.hidden_state
+            for el in self.forward_elements:
+                output_wavefront = el.forward(output_wavefront)
+            output_wavefront = output_wavefront * (1 - self.attenuation_forward) ** (1 / 2)
+
+            # get a next hidden by propagation of the output
+            hidden_state = output_wavefront
+            for el in self.backward_elements:
+                hidden_state = el.forward(hidden_state)
+            # update hidden state
+            self.hidden_state = hidden_state * (1 - self.attenuation_backward) ** (1 / 2)
 
         return output_wavefront
 
@@ -119,6 +127,9 @@ class RecurrentReservoir(nn.Module):
             simulation_parameters=self.simulation_parameters,
             forward_elements=self.forward_elements,
             backward_elements=self.backward_elements,
+            attenuation_forward=self.attenuation_forward,
+            attenuation_backward=self.attenuation_backward,
+            time_masking=self.time_masking,
             init_hidden=self.hidden_state,
             device=device
         )
