@@ -24,8 +24,8 @@ class SpecsTestElement(Element):
         super().__init__(simulation_parameters)
         self.test_specs = test_specs
 
-    def forward(self, input_field: Wavefront) -> Wavefront:
-        return super().forward(input_field)
+    def forward(self, incident_wavefront: Wavefront) -> Wavefront:
+        return super().forward(incident_wavefront)
 
     def to_specs(self) -> Iterable[ParameterSpecs]:
         return self.test_specs

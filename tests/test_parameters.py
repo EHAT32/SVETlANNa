@@ -97,7 +97,8 @@ def test_bounded_parameter_inner_value():
 
     # test inner parameter value
     torch.testing.assert_close(
-        (max_value-min_value) * torch.sigmoid(parameter.inner_parameter) + min_value,
+        (max_value-min_value) * torch.sigmoid(parameter.inner_parameter)
+        + min_value,
         torch.tensor(data)
     )
 
@@ -125,7 +126,8 @@ def test_bounded_parameter_inner_value():
 
     # test inner parameter value
     torch.testing.assert_close(
-        (max_value-min_value) * bound_func(parameter.inner_parameter) + min_value,
+        (max_value-min_value) * bound_func(parameter.inner_parameter)
+        + min_value,
         torch.tensor(data)
     )
 
@@ -160,7 +162,6 @@ def test_repr(parameter):
     ]
 )
 def test_storage_to_device(device):
-    torch.set_default_dtype(torch.float32)
     torch_parameter = torch.nn.Parameter(torch.tensor(1.))
     torch_tensor = torch.tensor(2.)
     sv_parameter = Parameter(torch.tensor(3.))
@@ -214,7 +215,11 @@ def test_storage_to_device(device):
 @pytest.mark.parametrize(
     "parameter", [
         Parameter(data=torch.tensor(123., dtype=torch.float32)),
-        ConstrainedParameter(data=torch.tensor(123., dtype=torch.float32), min_value=0, max_value=300)
+        ConstrainedParameter(
+            data=torch.tensor(123., dtype=torch.float32),
+            min_value=0,
+            max_value=300
+        )
     ]
 )
 def test_parameter_to_device(device, parameter):

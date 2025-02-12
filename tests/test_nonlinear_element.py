@@ -55,7 +55,7 @@ def test_nonlinear_element(
 
     output_field_analytic = output_amplitude * torch.exp(1j * incident_phase)
 
-    output_field = nle.forward(input_field=incident_field)
+    output_field = nle(incident_field)
 
     assert isinstance(output_field, w)
     assert torch.equal(output_field, output_field_analytic)

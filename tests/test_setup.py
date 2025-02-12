@@ -18,8 +18,8 @@ class SimpleElement(Element):
 
         self.a = a
 
-    def forward(self, input_field: Wavefront) -> Wavefront:
-        return input_field * self.a
+    def forward(self, incident_wavefront: Wavefront) -> Wavefront:
+        return incident_wavefront * self.a
 
 
 class ReversableSimpleElement(SimpleElement):

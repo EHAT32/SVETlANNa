@@ -22,8 +22,11 @@ class ElementToTest(svetlanna.elements.Element):
             'test_buffer', test_buffer
         )
 
-    def forward(self, input_field: svetlanna.Wavefront) -> svetlanna.Wavefront:
-        return super().forward(input_field)
+    def forward(
+        self,
+        incident_wavefront: svetlanna.Wavefront
+    ) -> svetlanna.Wavefront:
+        return super().forward(incident_wavefront)
 
 
 def test_setattr():
@@ -67,7 +70,6 @@ def test_setattr():
     ]
 )
 def test_make_buffer(device):
-    torch.set_default_dtype(torch.float32)
     sim_params = svetlanna.SimulationParameters(
         {
             'W': torch.linspace(-10, 10, 100),
@@ -120,7 +122,6 @@ def test_make_buffer(device):
     ]
 )
 def test_process_parameter(device):
-    torch.set_default_dtype(torch.float32)
     sim_params = svetlanna.SimulationParameters(
         {
             'W': torch.linspace(-10, 10, 100),
