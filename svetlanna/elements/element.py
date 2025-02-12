@@ -162,5 +162,5 @@ class Element(nn.Module, metaclass=ABCMeta):
     # === methods below are added for typing only ===
 
     if TYPE_CHECKING:
-        def __call__(self, input_field: Wavefront) -> Wavefront:
+        def __call__(self, incident_wavefront: Wavefront) -> Wavefront:
             ...
