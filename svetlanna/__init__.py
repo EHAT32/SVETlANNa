@@ -5,6 +5,7 @@ from .wavefront import Wavefront
 from . import elements
 from . import units
 from . import specs
+from .clerk import Clerk
 
 __all__ = [
     'Parameter',
@@ -14,5 +15,6 @@ __all__ = [
     'Wavefront',
     'elements',
     'units',
-    'specs'
+    'specs',
+    'Clerk'
 ]
