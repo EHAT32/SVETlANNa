@@ -36,20 +36,18 @@ SLM - Spatial Light Modulator
 
 # Installation, Usage and Examples
 
-## Installation From Source
+## Running From Source
 
-First, install the PyTorch:
+1. Create a virtual environment
+2. Install the PyTorch (it is up to the user to choose a version)
 ```bash
   pip install torch
 ```
-It is up to the user to choose a version.
-
-Second, istall the Poetry, or check that the version is 2.0.0 or greater
+3. Istall the Poetry, or check that its version is 2.0.0 or greater
 ```bash
   pip install poetry
 ```
-
-In the library folder fun
+4. In the library folder execute the command
 ```bash
   poetry install
 ```
@@ -74,6 +72,19 @@ To run tests, run the following command
 
 Result of training the feed-forward optical neural network for the MNIST classification task: The image of the figure "8" is passed through a stack of 10 phase plates with adjusted phase masks. Selected regions of the detector correspond to different classes of figures. The class of the figure is identified by the detector region that measures the maximum optical intensity.
 
+Examples of visualzation of optical set-ups and optical fields:
+
+<img src="./pics/visualization.png" alt="drawing" width="400"/>
+
+Example a of five-layer DONN trained to recognize numbers from the MNIST database:
+
+<img src="./pics/MNIST example 1.png" alt="drawing" width="400"/>
+
+<img src="./pics/MNIST example 2.png" alt="drawing" width="400"/>
+
+<img src="./pics/MNIST example 3.png" alt="drawing" width="400"/>
+
+
 # Contributing
 
 Contributions are always welcome!
@@ -97,7 +108,3 @@ The work on this repository was initiated within the grant by the [Foundation fo
 # License
 
 [Mozilla Public License Version 2.0](https://www.mozilla.org/en-US/MPL/2.0/)
-## Screenshots
-
-![App Screenshot](https://via.placeholder.com/468x300?text=App+Screenshot+Here)
-
