@@ -2,6 +2,7 @@ import torch
 from pathlib import Path
 import json
 import re
+import datetime
 from contextlib import contextmanager
 
 from typing import Protocol, Any, Self, TYPE_CHECKING, Generator
@@ -42,6 +43,8 @@ class ClerkMode(StrEnum):
 
 CHECKPOINT_FILENAME_SUFFIX = ".pt"
 CHECKPOINT_FILENAME_PATTERN = re.compile(f"^\\d+\\{CHECKPOINT_FILENAME_SUFFIX}$")
+CHECKPOINT_METADATA_KEY = "checkpoint_metadata"
+
 
 ConditionsType = TypeVar("ConditionsType")
 
@@ -78,6 +81,7 @@ class Clerk(Generic[ConditionsType]):
         self._checkpoint_targets = {}
         self._mode = ClerkMode.new_run
         self._resume_load_last_checkpoint = True
+        self._autosave_checkpoint = False
         self._in_use = False
         self._last_checkpoint_index = -1
         self._log_streams: dict[str, TextIOWrapper] = {}
@@ -122,7 +126,9 @@ class Clerk(Generic[ConditionsType]):
         return self.experiment_directory / filename
 
     @contextmanager
-    def _get_log_stream(self, tag: str, flush: bool = False) -> Generator[TextIOWrapper, None, None]:
+    def _get_log_stream(
+        self, tag: str, flush: bool = False
+    ) -> Generator[TextIOWrapper, None, None]:
         """Yield a stream for a specific tag, where logs with the tag will be written.
         The stream automatically flushes when closing the context.
 
@@ -205,7 +211,10 @@ class Clerk(Generic[ConditionsType]):
         self._checkpoint_targets = targets
 
     def begin(
-        self, resume: bool = False, resume_load_last_checkpoint: bool = True
+        self,
+        resume: bool = False,
+        resume_load_last_checkpoint: bool = True,
+        autosave_checkpoint: bool = False,
     ) -> Self:
         """Configure the clerk for a new context.
 
@@ -220,6 +229,9 @@ class Clerk(Generic[ConditionsType]):
             checkpoint targets' states before entering the context. By default, True.
             This mechanism works only if `resume=True`. The last checkpoint is
             identified in `checkpoints.txt` and has the largest index.
+        autosave_checkpoint : bool, optional
+            If True, a backup checkpoint will be saved in case the clerk context
+            exits unexpectedly. By default, False.
 
         Returns
         -------
@@ -232,8 +244,9 @@ class Clerk(Generic[ConditionsType]):
         else:
             self._mode = ClerkMode.new_run
 
-        # set resume_load_last_checkpoint setting
+        # set clerk settings
         self._resume_load_last_checkpoint = resume_load_last_checkpoint
+        self._autosave_checkpoint = autosave_checkpoint
 
         return self
 
@@ -269,6 +282,48 @@ class Clerk(Generic[ConditionsType]):
             # Write the data
             stream.write(data_str)
 
+    def _prepare_checkpoint_data(
+        self, metadata: object | None = None
+    ) -> dict[str, Any]:
+        """Creates a dictionary to be saved into checkpoint
+
+        Parameters
+        ----------
+        metadata : object | None, optional
+            The metadata for the new checkpoint, by default None.
+
+        Returns
+        -------
+        dict[str, Any]
+            The dictionary.
+        """
+        data = {}
+        for key, instance in self._checkpoint_targets.items():
+            data[key] = instance.state_dict()
+
+        if metadata is not None:
+            data[CHECKPOINT_METADATA_KEY] = metadata
+        return data
+
+    def _torch_save_checkpoint(self, data: dict[str, Any], index: str | int) -> Path:
+        """Save checkpoint data with torch
+
+        Parameters
+        ----------
+        data : dict[str, Any]
+            The dictionary.
+        index : str | int
+            The checkpoint index.
+
+        Returns
+        -------
+        Path
+            The path to the new checkpoint.
+        """
+        path = self._path_checkpoint(index)
+        torch.save(data, path)
+        return path
+
     def write_checkpoint(self, metadata: object | None = None):
         """Write the states of selected targets into a new checkpoint file.
 
@@ -281,18 +336,12 @@ class Clerk(Generic[ConditionsType]):
         self._check_in_use()
 
         # Create a dictionary to be saved
-        data = {}
-        for key, instance in self._checkpoint_targets.items():
-            data[key] = instance.state_dict()
-
-        if metadata is not None:
-            data["checkpoint_metadata"] = metadata
+        data = self._prepare_checkpoint_data(metadata=metadata)
 
         index = self._last_checkpoint_index + 1
 
         logger.debug(f"Starting to save the checkpoint with index {index}...")
-        path = self._path_checkpoint(index)
-        torch.save(data, path)
+        path = self._torch_save_checkpoint(data, index)
 
         with open(self._path_checkpoints, "a") as file:
             file.write(path.name + "\n")
@@ -328,7 +377,7 @@ class Clerk(Generic[ConditionsType]):
         path = self._path_checkpoint(index)
         data = torch.load(path)
 
-        metadata = data.get("checkpoint_metadata")
+        metadata = data.get(CHECKPOINT_METADATA_KEY)
 
         if targets is None:
             targets = self._checkpoint_targets
@@ -452,8 +501,9 @@ class Clerk(Generic[ConditionsType]):
 
     def __exit__(self, exc_type, exc_value, traceback):
         """Resets the clerk's internal state and closes all log streams when
-        exiting the context. This method ensures that any resources are
-        properly released and that the clerk is ready for a new context.
+        exiting the context. Also creates backup checkpoint if necessary.
+        This method ensures that any resources are properly released
+        and that the clerk is ready for a new context.
         """
         self._in_use = False
         self._last_checkpoint_index = -1
@@ -469,7 +519,34 @@ class Clerk(Generic[ConditionsType]):
                 exceptions.append(e)
         self._log_streams = {}
 
+        # Save backup checkpoint if necessary
+        if exc_type is not None and self._autosave_checkpoint:
+            # If in the clerk context the error was raised
+            time = str(datetime.datetime.now())
+            metadata = {
+                "description": "Backup checkpoint",
+                "time": time,
+            }
+            index = f"backup_{time.replace(' ', '_')}{CHECKPOINT_FILENAME_SUFFIX}"
+
+            try:
+                # Create a dictionary to be saved
+                data = self._prepare_checkpoint_data(metadata=metadata)
+
+                logger.debug("Starting to save the backup checkpoint...")
+
+                # Save data
+                self._torch_save_checkpoint(data, index)
+
+                logger.debug(
+                    f"Backup checkpoint with index {index} was successfully saved"
+                )
+            except Exception as e:
+                exceptions.append(e)
+            finally:
+                self._autosave_checkpoint = False
+
         if exceptions:
             raise ExceptionGroup(
-                "Exceptions occurred during log file closing", exceptions
+                "Exceptions occurred during clerk context closing", exceptions
             )

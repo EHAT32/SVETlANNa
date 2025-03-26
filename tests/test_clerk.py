@@ -1,5 +1,5 @@
 from svetlanna import Clerk
-from svetlanna.clerk import ClerkMode
+from svetlanna.clerk import ClerkMode, CHECKPOINT_FILENAME_PATTERN
 import pytest
 import torch
 
@@ -377,3 +377,37 @@ def test_context(tmp_path):
         with clerk._get_log_stream('test', flush=False) as stream:
             with clerk:
                 stream.detach()
+
+
+def test_backup_checkpoint(tmp_path):
+    clerk = Clerk(tmp_path)
+    checkpoints_filepath = tmp_path / 'checkpoints.txt'
+
+    class SpecificException(Exception):
+        pass
+
+    try:
+        with clerk.begin(autosave_checkpoint=True):
+            clerk.write_checkpoint()
+            raise SpecificException
+    except SpecificException:
+        pass
+
+    # Test if the backup checkpoint is not in 'checkpoints.txt'
+    with open(checkpoints_filepath) as file:
+        assert file.readlines() == ['0.pt\n']
+
+    backup_checkpoints = []
+    # Find backup checkpoint files
+    for file in tmp_path.iterdir():
+        if file.name.endswith('.pt'):
+            if not CHECKPOINT_FILENAME_PATTERN.match(file.name):
+                backup_checkpoints.append(file.name)
+
+    assert len(backup_checkpoints) == 1
+
+    # Test metadata
+    metadata = clerk.load_checkpoint(backup_checkpoints[0])
+    assert isinstance(metadata, dict)
+    assert 'time' in metadata
+    assert 'description' in metadata
