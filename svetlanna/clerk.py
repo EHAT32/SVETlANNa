@@ -14,7 +14,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    import pandas as pd
+    import pandas
 
 
 class StatefulTorchClass(Protocol):
@@ -363,7 +363,7 @@ class Clerk(Generic[ConditionsType]):
             while line := file.readline():
                 yield json.loads(line)
 
-    def load_logs_to_pandas(self, tag: str) -> "pd.DataFrame":
+    def load_logs_to_pandas(self, tag: str) -> "pandas.DataFrame":
         """Load logs from the file specified by the tag and return them as a pandas
         DataFrame.
 
@@ -378,10 +378,10 @@ class Clerk(Generic[ConditionsType]):
         pd.DataFrame
             Log data with the specific tag.
         """
-        import pandas as pd
+        import pandas
 
         path = self._path_log(tag)
-        return pd.read_json(path, lines=True)
+        return pandas.read_json(path, lines=True)
 
     def _checkpoint_filename_correctness(self, filename: str) -> bool:
         """Check if the checkpoint filename is correct."""
