@@ -6,6 +6,7 @@ from .logging import set_debug_logging
 from . import elements
 from . import units
 from . import specs
+from .clerk import Clerk
 
 __all__ = [
     'Parameter',
@@ -16,5 +17,6 @@ __all__ = [
     'set_debug_logging',
     'elements',
     'units',
-    'specs'
+    'specs',
+    'Clerk'
 ]
