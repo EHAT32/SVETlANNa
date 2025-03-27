@@ -56,21 +56,20 @@ def test_nonlinear_element(
         response_parameters=response_parameters
     )
 
-    incident_intensity = incident_field.intensity
+    incident_amplitude = torch.abs(incident_field)
     incident_phase = incident_field.phase
 
     if response_parameters is not None:
         keys = list(response_parameters.keys())
 
-        output_amplitude = torch.sqrt(
-            response_function(
-                incident_intensity,
-                response_parameters[keys[0]],
-                response_parameters[keys[1]]
-            )
+        output_amplitude = response_function(
+            incident_amplitude,
+            response_parameters[keys[0]],
+            response_parameters[keys[1]]
         )
+
     else:
-        output_amplitude = torch.sqrt(response_function(incident_intensity))
+        output_amplitude = response_function(incident_amplitude)
 
     output_field_analytic = output_amplitude * torch.exp(1j * incident_phase)
 
