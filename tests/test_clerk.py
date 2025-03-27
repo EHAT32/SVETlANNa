@@ -397,7 +397,7 @@ def test_backup_checkpoint(tmp_path):
     with open(checkpoints_filepath) as file:
         assert file.readlines() == ['0.pt\n']
 
-    backup_checkpoints = []
+    backup_checkpoints: list[str] = []
     # Find backup checkpoint files
     for file in tmp_path.iterdir():
         if file.name.endswith('.pt'):
@@ -411,3 +411,9 @@ def test_backup_checkpoint(tmp_path):
     assert isinstance(metadata, dict)
     assert 'time' in metadata
     assert 'description' in metadata
+
+    # Test clean_backup_checkpoints method
+
+    assert (tmp_path / backup_checkpoints[0]).exists()
+    clerk.clean_backup_checkpoints()
+    assert not (tmp_path / backup_checkpoints[0]).exists()

@@ -42,7 +42,12 @@ class ClerkMode(StrEnum):
 
 
 CHECKPOINT_FILENAME_SUFFIX = ".pt"
-CHECKPOINT_FILENAME_PATTERN = re.compile(f"^\\d+\\{CHECKPOINT_FILENAME_SUFFIX}$")
+CHECKPOINT_FILENAME_PATTERN = re.compile(
+    f"^\\d+\\{CHECKPOINT_FILENAME_SUFFIX}$"
+)
+CHECKPOINT_BACKUP_FILENAME_PATTERN = re.compile(
+    f"^backup_\\d{{4}}-\\d{{2}}-\\d{{2}}_\\d{{2}}:\\d{{2}}:\\d{{2}}\\.\\d{{6}}\\{CHECKPOINT_FILENAME_SUFFIX}$"
+)
 CHECKPOINT_METADATA_KEY = "checkpoint_metadata"
 
 
@@ -438,7 +443,8 @@ class Clerk(Generic[ConditionsType]):
 
     def clean_checkpoints(self):
         """Remove checkpoints that are not listed in `checkpoints.txt`.
-        If `checkpoints.txt` does not exist, then remove all .pt files.
+        If `checkpoints.txt` does not exist, then remove all `<n>.pt` files,
+        where `<n>` is an integer.
         """
 
         if self._path_checkpoints.exists():
@@ -458,6 +464,14 @@ class Clerk(Generic[ConditionsType]):
                 filename = file.name
                 if self._checkpoint_filename_correctness(filename):
                     file.unlink()
+
+    def clean_backup_checkpoints(self):
+        """Remove checkpoints that are matches backup checkpoints name pattern.
+        """
+        for file in self.experiment_directory.iterdir():
+            filename = file.name
+            if CHECKPOINT_BACKUP_FILENAME_PATTERN.match(filename):
+                file.unlink()
 
     def __enter__(self):
         # Check if the clerk is not in use in other context
