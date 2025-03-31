@@ -1,4 +1,5 @@
 from typing import Iterable, Any, Generator, TextIO, Generic, TypeVar, Literal
+from typing import Protocol
 from abc import ABCMeta, abstractmethod
 from io import BufferedWriter, BytesIO
 from contextlib import contextmanager
@@ -410,3 +411,29 @@ class ParameterSpecs:
         """
         self.parameter_name = parameter_name
         self.representations = representations
+
+
+class SubelementSpecs:
+    """Container for named subelement
+    """
+    def __init__(
+        self,
+        subelement_name: str,
+        subelement: 'Specsable'
+    ):
+        """
+        Parameters
+        ----------
+        subelement_name : str
+            human-readable name of the subelement.
+        subelement : Specsable
+            the subelement.
+        """
+        self.subelement_name = subelement_name
+        self.subelement = subelement
+
+
+class Specsable(Protocol):
+    """Represents any specsable object"""
+    def to_specs(self) -> Iterable[ParameterSpecs | SubelementSpecs]:
+        ...

@@ -2,7 +2,7 @@ from abc import ABCMeta, abstractmethod
 from torch import nn
 from torch import Tensor
 from ..simulation_parameters import SimulationParameters
-from ..specs import PrettyReprRepr, ParameterSpecs
+from ..specs import PrettyReprRepr, ParameterSpecs, SubelementSpecs
 from ..specs.specs_writer import write_specs_to_html
 from io import StringIO
 from typing import Iterable, TypeVar, TYPE_CHECKING
@@ -50,7 +50,7 @@ class Element(nn.Module, metaclass=ABCMeta):
 
         """Forward propagation through the optical element"""
 
-    def to_specs(self) -> Iterable[ParameterSpecs]:
+    def to_specs(self) -> Iterable[ParameterSpecs | SubelementSpecs]:
 
         """Create specs"""
 

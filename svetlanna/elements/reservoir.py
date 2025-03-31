@@ -1,9 +1,10 @@
+from svetlanna.specs import ParameterSpecs, SubelementSpecs
 from ..parameters import OptimizableFloat
 from ..simulation_parameters import SimulationParameters
 from ..wavefront import Wavefront
 from .element import Element
 from collections import deque
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Iterable, Union
 
 if TYPE_CHECKING:
     from svetlanna.setup import LinearOpticalSetup
@@ -113,3 +114,10 @@ class SimpleReservoir(Element):
         # add output to the delay line
         self.append_feedback_queue(output)
         return output
+
+    def to_specs(self) -> Iterable[ParameterSpecs | SubelementSpecs]:
+        return (
+            *super().to_specs(),
+            SubelementSpecs('Nonlinear element', self.nonlinear_element),
+            SubelementSpecs('Delay element', self.delay_element)
+        )

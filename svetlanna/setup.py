@@ -1,6 +1,7 @@
 from typing import Any, Iterable, Literal, Union
 from .elements import Element
 from .simulation_parameters import SimulationParameters
+from .specs import ParameterSpecs, SubelementSpecs
 from torch import nn
 from torch import Tensor
 from warnings import warn
@@ -294,3 +295,8 @@ class LinearOpticalSetup:
         widget.wavefront_images = wavefront_images
 
         return widget
+
+    def to_specs(self) -> Iterable[ParameterSpecs | SubelementSpecs]:
+        return (
+            SubelementSpecs(str(i), element) for i, element in enumerate(self.elements)
+        )
