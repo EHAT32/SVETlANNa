@@ -16,6 +16,17 @@ _T = TypeVar('_T', Tensor, None)
 _V = TypeVar('_V')
 
 
+class _BufferedValueContainer(tuple):
+    """Internal class that marks buffered values.
+    It is used to prevent double __setattr__ call with the same value in
+    the pattern `self.x = self.make_buffer('x', x_value)`
+    """
+    __slots__ = ()
+
+    def __new__(cls, obj):
+        return super().__new__(cls, (obj,))
+
+
 # TODO: check docstring
 class Element(nn.Module, metaclass=ABCMeta):
     """A class that describes each element of the system
@@ -61,8 +72,16 @@ class Element(nn.Module, metaclass=ABCMeta):
                 representations=(PrettyReprRepr(value=parameter),)
             )
 
-    # TODO: create docstrings
-    def __setattr__(self, name: str, value: Tensor | nn.Module) -> None:
+    def __setattr__(
+        self,
+        name: str,
+        value: Tensor | nn.Module | _BufferedValueContainer
+    ) -> None:
+
+        if isinstance(value, _BufferedValueContainer):
+            # In the case of pattern self.x = self.make_buffer('x', x_value)
+            # the attribute value is already set
+            return
 
         # BoundedParameter and Parameter are handled by pointing
         # auxiliary attribute on them with a name plus INNER_PARAMETER_SUFFIX
@@ -119,7 +138,8 @@ class Element(nn.Module, metaclass=ABCMeta):
         self.register_buffer(
             name, value, persistent=persistent
         )
-        return self.__getattr__(name)
+
+        return _BufferedValueContainer(self.__getattr__(name))  # type: ignore
 
     def process_parameter(
         self,
