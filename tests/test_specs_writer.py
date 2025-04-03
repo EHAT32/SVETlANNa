@@ -3,7 +3,7 @@ import torch
 from svetlanna.elements import Element
 from svetlanna import SimulationParameters
 from svetlanna.specs import ParameterSpecs, ReprRepr
-from svetlanna.specs.specs_writer import _context_generator
+from svetlanna.specs.specs_writer import context_generator
 from svetlanna.specs.specs_writer import write_specs_to_str
 from svetlanna.specs.specs_writer import write_specs_to_markdown
 from svetlanna.specs.specs_writer import write_specs_to_html
@@ -66,7 +66,7 @@ def test_context_generator(tmp_path):
         ]
     )
 
-    contexts = list(_context_generator(element, 0, tmp_path, []))
+    contexts = list(context_generator(element, 0, tmp_path, []))
 
     # === test contexts ===
     # test parameter_name attribute
@@ -88,25 +88,25 @@ def test_context_generator(tmp_path):
 
     # === test to_str ===
     test_stream = StringIO()
-    writer_context_generator = _context_generator(element, 0, tmp_path, [])
+    writer_context_generator = context_generator(element, 0, tmp_path, [])
     write_specs_to_str(element, 0, writer_context_generator, test_stream)
     assert test_stream.getvalue()
 
     # test for another header
     test_stream = StringIO()
-    writer_context_generator = _context_generator(element, 1, tmp_path, [])
+    writer_context_generator = context_generator(element, 1, tmp_path, [])
     write_specs_to_str(element, 1, writer_context_generator, test_stream)
     assert test_stream.getvalue()
 
     # === test to_markdown ===
     test_stream = StringIO()
-    writer_context_generator = _context_generator(element, 0, tmp_path, [])
+    writer_context_generator = context_generator(element, 0, tmp_path, [])
     write_specs_to_markdown(element, 0, writer_context_generator, test_stream)
     assert test_stream.getvalue()
 
     # === test to_html ===
     test_stream = StringIO()
-    writer_context_generator = _context_generator(element, 0, tmp_path, [])
+    writer_context_generator = context_generator(element, 0, tmp_path, [])
     write_specs_to_html(element, 0, writer_context_generator, test_stream)
     assert test_stream.getvalue()
 

@@ -29,7 +29,7 @@ class _WriterContext:
 _WriterContextGenerator: TypeAlias = Generator[_WriterContext, None, None]
 
 
-def _context_generator(
+def context_generator(
     element: Specsable,
     element_index: int,
     directory: str | Path,
@@ -290,7 +290,7 @@ class _ElementsIterator:
 
                 subelements: list[SubelementSpecs] = []
                 index = len(self._iterated)
-                writer_context_generator = _context_generator(
+                writer_context_generator = context_generator(
                     element, index, self.directory, subelements
                 )  # Subelements list is appended inside the generator
 
@@ -319,7 +319,8 @@ def write_elements_tree_to_str(
 
     def _write_element(tree_level: int, element: _ElementInTree):
         stream.write(' ' * (8 * tree_level))
-        indexed_name = f'({element.element_index}) {element.element.__class__.__name__}'
+        element_name = element.element.__class__.__name__
+        indexed_name = f'({element.element_index}) {element_name}'
 
         if element.subelement_name is not None:
             stream.write(f'[{element.subelement_name}] ')
@@ -340,7 +341,8 @@ def write_elements_tree_to_markdown(
 
     def _write_element(tree_level: int, element: _ElementInTree):
         stream.write(' ' * (4 * tree_level) + '* ')
-        indexed_name = f'`({element.element_index}) {element.element.__class__.__name__}`'
+        element_name = element.element.__class__.__name__
+        indexed_name = f'`({element.element_index}) {element_name}`'
 
         if element.subelement_name is not None:
             stream.write(f'[{element.subelement_name}] ')
