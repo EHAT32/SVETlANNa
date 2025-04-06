@@ -46,7 +46,7 @@ CHECKPOINT_FILENAME_PATTERN = re.compile(
     f"^\\d+\\{CHECKPOINT_FILENAME_SUFFIX}$"
 )
 CHECKPOINT_BACKUP_FILENAME_PATTERN = re.compile(
-    f"^backup_\\d{{4}}-\\d{{2}}-\\d{{2}}_\\d{{2}}:\\d{{2}}:\\d{{2}}\\.\\d{{6}}\\{CHECKPOINT_FILENAME_SUFFIX}$"
+    f"^backup_\\d{{4}}-\\d{{2}}-\\d{{2}}_\\d{{2}}-\\d{{2}}-\\d{{2}}\\.\\d{{6}}\\{CHECKPOINT_FILENAME_SUFFIX}$"
 )
 CHECKPOINT_METADATA_KEY = "checkpoint_metadata"
 
@@ -546,7 +546,8 @@ class Clerk(Generic[ConditionsType]):
                 "description": "Backup checkpoint",
                 "time": time,
             }
-            index = f"backup_{time.replace(' ', '_')}{CHECKPOINT_FILENAME_SUFFIX}"
+            time_str = time.replace(' ', '_').replace(':', '-')
+            index = f"backup_{time_str}{CHECKPOINT_FILENAME_SUFFIX}"
 
             try:
                 # Create a dictionary to be saved
