@@ -260,7 +260,7 @@ class _ElementsIterator:
         self.iterables = iterables
         self.directory = directory
         self._iterated: dict[int, _ElementInTree] = {}
-        self.tree: list[_ElementInTree] = []
+        self._tree: list[_ElementInTree] | None = None
 
     def __iter__(
         self
@@ -308,7 +308,25 @@ class _ElementsIterator:
                 # Repeat the process for all subelements of the tree element
                 yield from f(subelements, element_in_tree.children)
 
-        yield from f(self.iterables, self.tree)
+        self._tree = []
+        yield from f(self.iterables, self._tree)
+
+    @property
+    def tree(self) -> list[_ElementInTree]:
+        """Get a tree of all elements iterated
+
+        Returns
+        -------
+        list[_ElementInTree]
+            Elements tree.
+        """
+        if self._tree is None:
+            # Iterate to build a tree if not already exists
+            for _, _, i in self:
+                for _ in i:
+                    pass
+            return self.tree
+        return self._tree
 
 
 def write_elements_tree_to_str(
