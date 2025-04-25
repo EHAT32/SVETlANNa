@@ -413,7 +413,21 @@ def test_backup_checkpoint(tmp_path):
     assert 'description' in metadata
 
     # Test clean_backup_checkpoints method
-
     assert (tmp_path / backup_checkpoints[0]).exists()
     clerk.clean_backup_checkpoints()
     assert not (tmp_path / backup_checkpoints[0]).exists()
+
+    # Test if exception group raised when error during
+    # backup checkpoint saving
+    class PrepareCheckpointDataException(Exception):
+        pass
+
+    def destroyed_prepare_checkpoint_data(*args, **kwargs):
+        raise PrepareCheckpointDataException
+
+    with pytest.raises(ExceptionGroup) as exc_info:
+        with clerk.begin(autosave_checkpoint=True):
+            clerk._prepare_checkpoint_data = destroyed_prepare_checkpoint_data
+            raise SpecificException
+
+    assert exc_info.group_contains(PrepareCheckpointDataException)
