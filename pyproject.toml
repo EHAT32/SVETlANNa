@@ -33,6 +33,13 @@ pytest-cov = "^6.0.0"
 lightpipes = "^2.1.5"
 
 
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "^ +\\.\\.\\.$"
+]
+
 [[tool.poetry.source]]
 name = "pytorch-cpu"
 url = "https://download.pytorch.org/whl/cpu"
