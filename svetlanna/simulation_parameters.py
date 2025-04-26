@@ -36,7 +36,10 @@ class Axes:
             tensor_dimensionality = len(value.shape)
 
             if tensor_dimensionality not in (0, 1):
-                raise ValueError(f"All axes should be 0- or 1-dimensional tensors. Axis {axis_name} is {tensor_dimensionality}-dimensional")
+                raise ValueError(
+                    "All axes should be 0- or 1-dimensional tensors. "
+                    f"Axis {axis_name} is {tensor_dimensionality}-dimensional"
+                )
 
             if tensor_dimensionality == 1:
                 non_scalar_names.append(axis_name)
@@ -85,6 +88,16 @@ class Axes:
 
         return super().__getattribute__(name)
 
+    def __setattr__(self, name: str, value: Any) -> None:
+
+        if name in _AXES_INNER_ATTRS:
+            return super().__setattr__(name, value)
+
+        if name in self.__axes_dict:
+            warnings.warn(f'Axis {name} has not been changed')
+
+        return super().__setattr__(name, value)
+
     def __getitem__(self, name: str) -> Any:
         axes = self.__axes_dict
         if name in axes:
@@ -92,7 +105,7 @@ class Axes:
 
         raise AxisNotFound(f'Axis with name {name} does not exist.')
 
-    def __setitem__(self, name: str) -> None:
+    def __setitem__(self, name: str, value: Any) -> None:
         raise RuntimeError('Axis can not be changed')
 
     def __dir__(self) -> Iterable[str]:
@@ -150,8 +163,9 @@ class SimulationParameters:
         x_grid, y_grid: torch.Tensor
             A torch.meshgrid of selected axis.
             Comment: indexing='xy'
-                the first dimension corresponds to the cardinality of the second axis (`y_axis`) and
-                the second dimension corresponds to the cardinality of the first axis (`x_axis`).
+                the first dimension corresponds to the cardinality
+                of the second axis (`y_axis`) and the second dimension
+                corresponds to the cardinality of the first axis (`x_axis`).
         """
         a, b = torch.meshgrid(
             self.axes[x_axis], self.axes[y_axis],
@@ -159,13 +173,13 @@ class SimulationParameters:
         )
         return a.to(self.__device), b.to(self.__device)
 
-    def axes_size(self, axs: str | Iterable[str]) -> torch.Size:
+    def axes_size(self, axs: Iterable[str]) -> torch.Size:
         """
         Returns a size of axes in specified order.
 
         Parameters
         ----------
-        axs : str | Iterable[str]
+        axs : Iterable[str]
             An order of axis.
 
         Returns
@@ -180,9 +194,10 @@ class SimulationParameters:
                 axis_len = len(self.axes[axis])
             except TypeError:  # float has no len()
                 axis_len = 1
-            except KeyError:  # axis not in self.__axes_dict.keys()
+            except AxisNotFound:  # axis not in self.__axes_dict.keys()
                 warnings.warn(
-                    message=f"There is no '{axis}' in axes! Zero returned as a dimension for '{axis}'-axis."
+                    f"There is no '{axis}' in axes! "
+                    f"Zero returned as a dimension for '{axis}'-axis."
                 )
                 axis_len = 0
 
@@ -195,8 +210,8 @@ class SimulationParameters:
             return self
 
         new_axes_dict = {}
-        for axis_name in self.__axes_dict.keys():
-            new_axes_dict[axis_name] = self.__axes_dict[axis_name].to(device=device)
+        for axis_name, axis in self.__axes_dict.items():
+            new_axes_dict[axis_name] = axis.to(device=device)
         return SimulationParameters(axes=new_axes_dict)
 
     @property
