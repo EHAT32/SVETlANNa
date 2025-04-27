@@ -41,11 +41,10 @@ class Wavefront(torch.Tensor):
         Returns
         -------
         torch.Tensor
-            phase from $0$ to $2\\pi$
+            phase from $-\\pi$ to $\\pi$
         """
         # HOTFIX: problem with phase of -0. in visualization
         res = torch.angle(torch.Tensor(self) + 0.0)
-        # res[res < 0] += 2 * torch.pi
         return res
 
     def fwhm(
@@ -126,14 +125,7 @@ class Wavefront(torch.Tensor):
         kxx, axes = tensor_dot(wave_number, x, 'wavelength', ('H', 'W'))
         kyy, _ = tensor_dot(wave_number, y, 'wavelength', ('H', 'W'))
         kzz = wave_number[..., None, None] * distance
-        field = torch.exp(
-            1j * (
-                wave_direction[0] * kxx +
-                wave_direction[1] * kyy +
-                wave_direction[2] * kzz +
-                initial_phase
-            )
-        )
+
         field = torch.exp(1j * wave_direction[0] * kxx)
         field = field * torch.exp(1j * wave_direction[1] * kyy)
         field = field * torch.exp(1j * wave_direction[2] * kzz + initial_phase)
@@ -146,6 +138,8 @@ class Wavefront(torch.Tensor):
         simulation_parameters: SimulationParameters,
         waist_radius: float,
         distance: float = 0.,
+        dx: float = 0.,
+        dy: float = 0.,
     ) -> Self:
         """Generates the Gaussian beam.
 
@@ -157,6 +151,10 @@ class Wavefront(torch.Tensor):
             Waist radius of the beam
         distance : float, optional
             free wave propagation distance, by default 0.
+        dx : float, optional
+            Horizontal position of the beam center, by default 0.
+        dy : float, optional
+            Horizontal position of the beam center, by default 0.
 
         Returns
         -------
@@ -168,8 +166,8 @@ class Wavefront(torch.Tensor):
 
         rayleigh_range = torch.pi * (waist_radius**2) / simulation_parameters.axes.wavelength    # noqa: E501
 
-        x = simulation_parameters.axes.W[None, :]
-        y = simulation_parameters.axes.H[:, None]
+        x = simulation_parameters.axes.W[None, :] - dx
+        y = simulation_parameters.axes.H[:, None] - dy
         radial_distance_squared = x**2 + y**2
 
         hyperbolic_relation = waist_radius * (1 + (distance / rayleigh_range)**2)**(1/2)    # noqa: E501
@@ -227,7 +225,9 @@ class Wavefront(torch.Tensor):
         cls,
         simulation_parameters: SimulationParameters,
         distance: float,
-        initial_phase: float = 0.
+        initial_phase: float = 0.,
+        dx: float = 0.,
+        dy: float = 0.,
     ) -> Self:
         """Generate wavefront of the spherical wave
 
@@ -239,6 +239,10 @@ class Wavefront(torch.Tensor):
             distance between the source and the oXY plane.
         initial_phase : float, optional
             additional phase to the resulting field, by default 0.
+        dx : float, optional
+            Horizontal position of the spherical wave center, by default 0.
+        dy : float, optional
+            Horizontal position of the spherical wave center, by default 0.
 
         Returns
         -------
@@ -247,8 +251,8 @@ class Wavefront(torch.Tensor):
         """
         wave_number = 2 * torch.pi / simulation_parameters.axes.wavelength
 
-        x = simulation_parameters.axes.W[None, :]
-        y = simulation_parameters.axes.H[:, None]
+        x = simulation_parameters.axes.W[None, :] - dx
+        y = simulation_parameters.axes.H[:, None] - dy
 
         radius = torch.sqrt(
             (x**2 + y**2) + distance**2

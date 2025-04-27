@@ -1,7 +1,7 @@
 import svetlanna
 import svetlanna.elements
 import torch
-from svetlanna.elements.element import INNER_PARAMETER_SUFFIX
+from svetlanna.elements.element import INNER_PARAMETER_SUFFIX, _BufferedValueContainer
 import pytest
 
 import svetlanna.specs
@@ -54,6 +54,9 @@ def test_setattr():
     ("device",),
     [
         pytest.param(
+            'cpu'
+        ),
+        pytest.param(
             'cuda',
             marks=pytest.mark.skipif(
                 not torch.cuda.is_available(),
@@ -94,17 +97,21 @@ def test_make_buffer(device):
 
     # test if a buffer cannot be registered with a tensor on a device
     # distinct from the simulation parameters' device
-    with pytest.raises(ValueError):
-        element = ElementToTest(
-            sim_params,
-            test_parameter=None,
-            test_buffer=test_buffer.to(device)
-        )
+    if device != 'cpu':
+        with pytest.raises(ValueError):
+            element = ElementToTest(
+                sim_params,
+                test_parameter=None,
+                test_buffer=test_buffer.to(device)
+            )
 
 
 @pytest.mark.parametrize(
     ("device",),
     [
+        pytest.param(
+            'cpu'
+        ),
         pytest.param(
             'cuda',
             marks=pytest.mark.skipif(
@@ -159,12 +166,13 @@ def test_process_parameter(device):
 
     # test if a parameter cannot be registered with a tensor on a device
     # distinct from the simulation parameters' device
-    with pytest.raises(ValueError):
-        element = ElementToTest(
-            sim_params,
-            test_parameter=test_parameter.to(device),
-            test_buffer=None
-        )
+    if device != 'cpu':
+        with pytest.raises(ValueError):
+            element = ElementToTest(
+                sim_params,
+                test_parameter=test_parameter.to(device),
+                test_buffer=None
+            )
 
 
 def test_to_specs():
@@ -189,3 +197,42 @@ def test_to_specs():
     representations = list(specs[0].representations)
     assert len(representations) == 1
     assert isinstance(representations[0], svetlanna.specs.ReprRepr)
+
+
+def test_make_buffer_pattern():
+    sim_params = svetlanna.SimulationParameters(
+        {
+            'W': torch.linspace(-10, 10, 100),
+            'H': torch.linspace(-10, 10, 100),
+            'wavelength': 1.,
+        }
+    )
+    element = ElementToTest(
+        sim_params,
+        test_parameter=None,
+        test_buffer=None
+    )
+
+    assert isinstance(element.make_buffer('x', None), _BufferedValueContainer)
+
+    with pytest.warns(
+        match="You set the attribute y with an object of internal type _BufferedValueContainer. Make sure this is the intended behavior."
+    ):
+        element.y = element.make_buffer('x', None)
+
+
+def test_repr_html():
+    sim_params = svetlanna.SimulationParameters(
+        {
+            'W': torch.linspace(-10, 10, 100),
+            'H': torch.linspace(-10, 10, 100),
+            'wavelength': 1.,
+        }
+    )
+    element = ElementToTest(
+        sim_params,
+        test_parameter=None,
+        test_buffer=None
+    )
+
+    assert isinstance(element._repr_html_(), str)
