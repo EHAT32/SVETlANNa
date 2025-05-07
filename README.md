@@ -5,9 +5,10 @@ Release is planned for May 2025.
 
 SVETlANNa is an open-source Python library for simulation of free-space optical set-ups and neuromorphic systems such as Diffractive Neural Networks. It is primarily built on the PyTorch framework, leveraging key features such as tensor-based computations and efficient parallel processing. At its core, SvetlANNa relies on the Fourier optics, supporting multiple propagation models, including the Angular spectrum method and the Fresnel approximation.
 
-There is a supporting github project containing numerous application examples in the Jupyter notebok format. This project will be opened upon the release.
+There is a supporting github project [SVETlANNa.docs](https://github.com/CompPhysLab/SVETlANNa.docs) containing numerous application examples in the Jupyter notebook format. This project will be opened upon the release.
 
-The name of the library is composed of the Russian word "svet", which is the light in English and the abbreviation ANN - artificial neural network, and simultaneously this word sounds like a Russian female name Svetlana.
+The name of the library is composed of the Russian word "svet", which is the "light" in English and the abbreviation ANN standing for an artificial neural network, and simultaneously the whole word sounds like a Russian female name Svetlana.
+
 ## Abbreviations
 
 NN - Neural Network
@@ -21,16 +22,18 @@ DONN - Diffractive Optical Neural Network
 DOE - Diffractive Optical Element
 
 SLM - Spatial Light Modulator
+
 ## Features
 
+- based on the [PyTorch](https://pytorch.org/)
 - forward propagation models include the Angular spectrum method and the Fresnel approximation
-- possibility to solve the classical DOE/SLM optimization problem with the Gerchberg-Saxton and hybrid inpu-output algorithms
+- possibility to solve the classical DOE/SLM optimization problem with the Gerchberg-Saxton and hybrid input-output algorithms
 - support for custom elements and optimization methods
 - support for various free-space ONN architectures including feed-forward NN, autoencoders, and recurrent NN
 - cross platform
 - full GPU aceleration
 - companion repository with numerous .ipynb examples
-- custom logging, project management, and analysis tools
+- custom logging, project management, analysis, and visualization tools
 - tests for the whole functionality
 
 
@@ -38,7 +41,7 @@ SLM - Spatial Light Modulator
 
 ## Running From Source
 
-1. Create a virtual environment
+1. Create a virtual environment (e.g., see [venv documentation](https://docs.python.org/3/library/venv.html))
 2. Install the PyTorch (it is up to the user to choose a version)
 ```bash
   pip install torch
@@ -54,7 +57,8 @@ SLM - Spatial Light Modulator
 
 ## Installation From PIP
 
-Not yet ...
+Coming soon
+
 ## Running Tests
 
 To run tests, run the following command
@@ -66,7 +70,6 @@ To run tests, run the following command
 ## Documentation
 
 [Documentation]()
-
 
 ## Examples
 
@@ -84,6 +87,7 @@ Example a of five-layer DONN trained to recognize numbers from the MNIST databas
 
 <img src="./pics/MNIST example 3.png" alt="drawing" width="400"/>
 
+Example of 
 
 # Contributing
 
@@ -97,6 +101,7 @@ Please adhere to this project's `code of conduct`.
 # Acknowledgements
 
 The work on this repository was initiated within the grant by the [Foundation for Assistance to Small Innovative Enterprises](https://en.fasie.ru/)
+
 # Authors
 
 - [@aashcher](https://github.com/aashcher)
