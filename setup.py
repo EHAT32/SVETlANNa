@@ -1,7 +1,9 @@
-from distutils.core import setup
+#from distutils.core import setup
+from setuptools import setup, find_packages
+
 setup(
     name = 'svetlanna',
-    packages = ['svetlanna'],
+    packages = find_packages(exclude=['tests']), #['svetlanna'],
     version = '1.0.0',
     license='MPL-2.0',
     description = 'SVETlANNa is an open-source Python library for simulation of free-space optical set-ups and neuromorphic systems such as Diffractive Neural Networks.',   # Give a short description about your library
