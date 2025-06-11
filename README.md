@@ -1,6 +1,3 @@
-
-Release is planned for May 2025.
-
 # SVETlANNa
 
 SVETlANNa is an open-source Python library for simulation of free-space optical set-ups and neuromorphic systems such as Diffractive Neural Networks. It is primarily built on the PyTorch framework, leveraging key features such as tensor-based computations and efficient parallel processing. At its core, SvetlANNa relies on the Fourier optics, supporting multiple propagation models, including the Angular spectrum method and the Fresnel approximation.
@@ -57,7 +54,9 @@ SLM - Spatial Light Modulator
 
 ## Installation From PIP
 
-Coming soon
+```bash
+pip install svetlanna
+```
 
 ## Running Tests
 
