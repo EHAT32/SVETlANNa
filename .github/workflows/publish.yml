@@ -31,7 +31,7 @@ jobs:
         poetry install
 
     - name: Configure poetry
-      run: poetry config pypi-token.pypi ${{ secrets.PYPI_API_KEY }}
+      run: poetry config pypi-token.pypi ${{ secrets.PYPI_API_TOKEN }}
 
     - name: Build package
       run: poetry build
