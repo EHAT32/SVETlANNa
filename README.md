@@ -42,6 +42,15 @@ SLM - Spatial Light Modulator
 - calculation of parameters of phase masks, DOEs and SLMs for both classical optical systems and neuromorphic optical computers;
 - modeling and optimization of parameters of ONN and DONN for problems of all-optical classification and prediction.
 
+## Recommended technical requirements:
+
+1.	Intel Core i5 8400 / AMD Ryzen 5 1400 or higher;
+2.	memory greater than 8 Gb;
+3.	HDD/SSD space not less than 16 Гб (virtual enviroment takes about 6 Gb);
+4.	for running on GPU you need an Nvidia card with CUDA support and memory not less than 2 Gb;
+5.	OS Windows 10 or greater, or Linux with kernel 5.15 or greater;
+6.	the library requires Python 3.11.
+
 # Installation, Usage and Examples
 
 For usage there are two options, either run from the source or install from pip.
