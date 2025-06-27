@@ -64,7 +64,7 @@ pip install svetlanna
 ```bash
   cd SVETlANNa
 ```
-3. Создайте виртуальное окружение для Python 3.11 и активируйте его (см. документацию [venv](https://docs.python.org/3/library/venv.html)).
+3. Создайте виртуальное окружение для Python 3.11 и активируйте его (см. документацию [venv](https://docs.python.org/3/library/venv.html)). Все последующие действия необходимо выполнять внутри активированного окружения.
 4. Установите Poetry (версии 2.0.0 или выше):
 ```bash
   pip install poetry
@@ -92,6 +92,57 @@ pip install svetlanna
 ## Документация
 
 Документация доступна по [ссылке](https://compphyslab.github.io/SVETlANNa/)
+
+## Запуск примеров с установкой основной библиотеки
+
+Примеры с различными сценариями использования библиотеки собраны в репозитории [SVETlANNa.docs](https://github.com/CompPhysLab/SVETlANNa.docs).
+
+Чтобы запустить примеры локально на вашем компьютере выполните следующие действия:
+1. Клонируйте репозиторий (должен быть установлен [git](https://git-scm.com)):
+```bash
+  git clone https://github.com/CompPhysLab/SVETlANNa.docs.git
+```
+2. Перейдите в директорию проекта:
+```bash
+  cd SVETlANNa.docs
+```
+3. Создайте виртуальное окружение для Python 3.11 (см. документацию по [venv](https://docs.python.org/3/library/venv.html)) и активируйте его. Все последующие действия необходимо выполнять внутри активированного окружения.
+4. Установите основную библиотеку:
+```bash
+  pip install svetlanna
+```
+5. Установите актуальную версию PyTorch (см. инструкции на официальном [сайте](https://pytorch.org/get-started/locally/)). Выберите подходящий вариант установки в зависимости от вашей системы. Для работы с GPU требуется соответствующая видеокарта и поддерживаемая сборка PyTorch.
+6. Если в системе не установлен Jupyter notebook, установите его:
+```bash
+  pip install notebook
+```
+7. Установите дополнительные пакеты:
+```bash
+  pip install reservoirpy matplotlib tqdm requests av scikit-image py-cpuinfo gputil
+```
+8. Запустите Jupyter notebook и откройте страницу в бразере (см. “Or copy and paste one of these URLs:” в терминале):
+```bash
+  jupyter notebook
+```
+9. Перейдите в папку проекта SVETlANNa.docs. Примеры разделены по тематическим подпапкам в виде .ipynb файлов. Для запуска примера требуется открыть нужный файл в интерфейсе Jupyter notebook и выполнить все ячейки с кодом (комбинация клавиш Shift+Enter).
+
+## Запуск примеров с установленной из исходников библиотекой SVETlANNa
+
+1. Клонируйте репозиторий (должен быть установлен [git](https://git-scm.com)):
+```bash
+	git clone https://github.com/CompPhysLab/SVETlANNa.docs.git 
+```
+2. Если в системе не установлен Jupyter notebook, установите его:
+```bash
+  pip install notebook
+```
+3. Установите дополнительные пакеты
+	pip install reservoirpy matplotlib tqdm requests av scikit-image py-cpuinfo gputil
+4. Запустите Jupyter notebook
+```bash
+	jupyter notebook
+```
+и откройте страницу в бразере (см. “Or copy and paste one of these URLs:” в терминале)
 
 ## Примеры
 
