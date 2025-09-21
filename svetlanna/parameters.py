@@ -206,3 +206,5 @@ class ConstrainedParameter(Parameter):
 
 OptimizableFloat: TypeAlias = float | torch.Tensor | torch.nn.Parameter | Parameter
 OptimizableTensor: TypeAlias = torch.Tensor | torch.nn.Parameter | Parameter
+
+BoundedParameter = ConstrainedParameter
