@@ -46,7 +46,7 @@ SLM - Spatial Light Modulator
 
 1.	Intel Core i5 8400 / AMD Ryzen 5 1400 or higher;
 2.	memory greater than 8 Gb;
-3.	HDD/SSD space not less than 16 Гб (virtual enviroment takes about 6 Gb);
+3.	HDD/SSD space not less than 16 Gb (virtual enviroment takes about 6 Gb);
 4.	for running on GPU you need an Nvidia card with CUDA support and memory not less than 2 Gb;
 5.	OS Windows 10 or greater, or Linux with kernel 5.15 or greater;
 6.	the library requires Python 3.11.
